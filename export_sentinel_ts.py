@@ -6,7 +6,6 @@
 # And some text below
 
 # %%
-
 import ee
 import re
 import pandas as pd
