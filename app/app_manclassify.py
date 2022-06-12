@@ -14,10 +14,6 @@ import re
 from plotnine import *
 import leafmap
 
-# st.text
-
-
-col1, col2 = st.columns(2)
 
 gdrive_path = '/Users/gopal/Google Drive'
 gdrive_ml_path = os.path.join(gdrive_path, '_Research projects/ML')
@@ -27,13 +23,21 @@ data_path = os.path.join(gdrive_ml_path, 'manclassify/script_output', out_folder
 
 # %%
 
-files = os.listdir(data_path)
+
+data_path = st.text_input("Path to Google Drive folder", value = data_path)
+
+data_path_files = pd.DataFrame({'Files': os.listdir(data_path)})
+
+
+# files = os.listdir(data_path)
 
 # %%
+col1, col2 = st.columns(2)
+
 
 i = 0
 
-time_series_pd_load = pd.read_csv(os.path.join(data_path,files[i]))
+time_series_pd_load = pd.read_csv(os.path.join(data_path,data_path_files.Files.iloc[i]))
 
 # %%
 time_series_pd = time_series_pd_load
@@ -46,17 +50,17 @@ time_series_long = time_series_pd.melt(id_vars = ['datetime', 'cloudmask'], valu
 # time_series_long
 
 
-# In[35]:
+# %%
 
 
 p_nrgb = (ggplot(data = time_series_long.query('cloudmask == 0 & variable != "NDVI"')) + 
-   geom_point(aes(x = 'datetime', y = 'value', color = 'variable')) +
-   scale_x_datetime(date_labels = '%Y-%b') +
-   theme(figure_size = (10,5)))
+    geom_point(aes(x = 'datetime', y = 'value', color = 'variable')) +
+    scale_x_datetime(date_labels = '%Y-%b') +
+    theme(figure_size = (10,5)))
 p_NDVI = (ggplot(data = time_series_long.query('cloudmask == 0 & variable == "NDVI"')) + 
-   geom_point(aes(x = 'datetime', y = 'value', color = 'variable')) +
-   scale_x_datetime(date_labels = '%Y-%b') +
-   theme(figure_size = (10,5)))
+    geom_point(aes(x = 'datetime', y = 'value', color = 'variable')) +
+    scale_x_datetime(date_labels = '%Y-%b') +
+    theme(figure_size = (10,5)))
 
 
 
@@ -69,6 +73,10 @@ st.title("Pixel classification")
 with st.sidebar:
     lat = st.number_input('Lat', 0.0, 90.0, 13.0) #, step = 0.1)
     lon = st.number_input('Lon', -180.0, 180.0, 77.0) #, step = 0.1)
+    # st.write(data_path_files)
+    if st.checkbox('Show project files'):
+        st.text('Files in ' + data_path)
+        st.write(data_path_files)
     
 # with col1:
 m = leafmap.Map(center=(lat, lon), zoom=18)
