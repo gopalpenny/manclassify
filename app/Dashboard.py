@@ -40,11 +40,17 @@ default_app_path = '/Users/gopal/Google Drive/_Research projects/ML/manclassify/
 if 'app_path' not in st.session_state:
     st.session_state['app_path'] = default_app_path
     
-if 'proj' not in st.session_state:
-    st.session_state.proj = 'region1'
+if 'proj_name' not in st.session_state:
+    st.session_state.proj_name = 'region1'
     
 if 'proj_path' not in st.session_state:
     st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
+    
+
+if st.checkbox("Display Session Variables"):
+    st.markdown('* st.session_state.app_path: ' + st.session_state.app_path +
+                '\n* st.session_state.proj_name: ' + st.session_state.proj_name +
+                '\n* st.session_state.proj_path: ' + st.session_state.proj_path)
 
 
 st.session_state.app_path = st.text_input("Application directory (in Google Drive)", value = default_app_path)
@@ -57,8 +63,8 @@ os.walk(default_app_path)
 
 st.title("Dashboard")
 
-st.session_state.proj = st.selectbox("Select a project", options = tuple(projects))
-st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
+st.session_state.proj_name = st.selectbox("Select a project", options = tuple(projects))
+st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj_name)
 
 data_path_files = pd.DataFrame({'Files': os.listdir(st.session_state.proj_path)})
 
@@ -91,7 +97,7 @@ os.listdir(default_app_path)[0:4]
 # %%
     
 with st.sidebar:
-    st.subheader("Project: " + st.session_state.proj)
+    st.subheader("Project: " + st.session_state.proj_name)
     if st.checkbox('Show project files'):
         st.text('Files in ' + st.session_state.proj_path)
         # st.write(data_path_files)
