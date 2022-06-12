@@ -6,6 +6,8 @@ Created on Sun Jun 12 20:10:02 2022
 @author: gopal
 """
 import streamlit as st
+import os
+import geopandas as gpd
 # appmodule
 
 def testfunc():
@@ -13,10 +15,11 @@ def testfunc():
     
     
 # import the shapefile to the project directory
-def ImportShapefile(x):
+def ImportShapefile(region_path, path_to_shp_import):
     
-    st.write('hello world')
-    if not os.path.isdir(shp_path): os.mkdir(shp_path)
+    region_shp_path = os.path.join(region_path,"region.shp")
+    # st.write('hello world')
+    if not os.path.isdir(region_path): os.mkdir(region_path)
     if os.path.isfile(region_shp_path):
         st.write('region.shp already exists')
     else:

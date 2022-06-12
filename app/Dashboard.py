@@ -44,14 +44,22 @@ if 'proj_name' not in st.session_state:
     st.session_state.proj_name = 'region1'
     
 if 'proj_path' not in st.session_state:
-    st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
+    st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj_name)
+    
+    
+if 'region_status' not in st.session_state:
+    st.session_state.region_status = "Not done"
+    
+if 'samples_status' not in st.session_state:
+    st.session_state.samples_status = "Not done"
+# if 'proj_path' not in st.session_state:
+#     st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
     
 
 if st.checkbox("Display Session Variables"):
     st.markdown('* st.session_state.app_path: ' + st.session_state.app_path +
                 '\n* st.session_state.proj_name: ' + st.session_state.proj_name +
                 '\n* st.session_state.proj_path: ' + st.session_state.proj_path)
-
 
 st.session_state.app_path = st.text_input("Application directory (in Google Drive)", value = default_app_path)
 
