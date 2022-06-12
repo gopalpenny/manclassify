@@ -23,6 +23,9 @@ data_path = os.path.join(gdrive_ml_path, 'manclassify/script_output', out_folder
 
 # %%
 
+st.set_page_config(page_title="Classify", page_icon="🌍")
+
+
 
 data_path = st.text_input("Path to Google Drive folder", value = data_path)
 
