@@ -82,3 +82,102 @@ def GenerateSamples(app_path, proj_name):
         task.start()
         
         st.write("Sent task to Earth Engine")
+        
+# %%
+def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date_range):
+    """
+    This function is used to sample imagery using Google Earth Engine
+    The point coordinate is used to generate timeseries within the date_range
+    and export the results to Google Drive. It runs one point at a time. 
+    Intended to be used within a for loop or mapped over a list of points.
+
+    Parameters
+    ----------
+    sample_pt_coords : list (float)
+        List of length 2 as [x, y] coordinates.
+    sample_pt_name : str
+        pt_ts_loc1 for loc_id = 1.
+    timeseries_dir_path : str
+        path to the directory where results will be saved /proj_name/proj_name_pt_timeseries.
+    date_range : list (str)
+        List of length 2 as [start_date, end_date] for downloading data.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    sample_pt = ee.Geometry.Point(sample_pt_coords)
+    
+    # Export S1
+    s1_pt_filename = sample_pt_name + '_s1'
+    s1_pt_filepath = os.path.join(timeseries_dir_path, s1_pt_filename + '.csv')
+    
+    if not os.path.exists(s1_pt_filepath):
+        s1_output_bands = ['HH','VV','HV','VH','angle']
+        s1_ic = ee.ImageCollection("COPERNICUS/S1_GRD") \
+          .filterBounds(sample_pt) \
+          .filterDate(date_range[0],date_range[1])
+          
+        # Get S1 pixel timeseries
+        s1_ts = rs.get_pixel_ts_allbands(
+            pts_fc = ee.FeatureCollection(sample_pt),
+            image_collection = s1_ic,
+            ic_property_id = 'system:index',
+            scale = 10) # for Landsat resolution
+        # time_series_pd_load = geemap.ee_to_pandas(time_series_fc)
+            
+        task_s1 = ee.batch.Export.table.toDrive(
+            collection = s1_ts,
+            selectors = s1_output_bands + ['image_id'],
+            folder = timeseries_dir_name,
+            description = s1_pt_filename,
+            fileNamePrefix = s1_pt_filename)
+        
+        task_s1.start()
+      
+    # Export S2
+    
+    s2_pt_filename = sample_pt_name + '_s2'
+    s2_pt_filepath = os.path.join(timeseries_dir_path, s2_pt_filename + '.csv')
+    
+    if not os.path.exists(s2_pt_filepath):
+    
+        s2_output_bands = ['B8','B4','B3','B2','clouds','cloudmask','shadows','probability']
+        
+        # params variable is used to pass  information to the cloud masking functions.
+        # see help(add_cld_shadow_mask_func)
+        s2params = {
+            'START_DATE' : date_range[0],
+            'END_DATE' : date_range[1],
+            'CLOUD_FILTER' : 50,
+            'CLD_PRB_THRESH' : 53, # 53 for Cauvery # 55 for Indus
+            'NIR_DRK_THRESH' : 0.2,
+            'CLD_PRJ_DIST' : 1,
+            'BUFFER' : 50
+        }
+        
+        s2_clouds_ic = ees.get_s2_sr_cld_col(sample_pt, s2params) \
+          .map(ees.add_cld_shadow_mask_func(s2params))
+        
+        # For some reason the reproject() works so that subsequent sampling returns the whole rectangular array
+        # see https://stackoverflow.com/questions/64012752/gee-samplerectangle-returning-1x1-array
+        # s2_clouds_im = s2_clouds_ic.mosaic().reproject(crs = ee.Projection('EPSG:4326'), scale=10) #.clip(hyd_watershed)
+        
+        # Get pixel timeseries
+        s2_ts = rs.get_pixel_ts_allbands(
+            pts_fc = ee.FeatureCollection(sample_pt),
+            image_collection = s2_clouds_ic,
+            ic_property_id = 'system:index',
+            scale = 10) # for Landsat resolution
+        # time_series_pd_load = geemap.ee_to_pandas(time_series_fc)
+            
+        task_s2 = ee.batch.Export.table.toDrive(
+            collection = s2_ts,
+            selectors = s2_output_bands + ['image_id'],
+            folder = timeseries_dir_name,
+            description = s2_pt_filename,
+            fileNamePrefix = s2_pt_filename)
+        
+        task_s2.start()
