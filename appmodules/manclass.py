@@ -7,6 +7,8 @@ Created on Sun Jun 12 20:10:02 2022
 """
 import streamlit as st
 import os
+import pandas as pd
+import numpy as np
 import geopandas as gpd
 import ee
 import sys
@@ -94,7 +96,41 @@ def GenerateSamples(app_path, proj_name):
         st.write("Sent task to Earth Engine")
         
 # %%
-def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date_range):
+
+
+def DownloadPoints(loc, date_range, timeseries_dir_path, ts_status):
+    """
+    This function downloads all the points in loc using DownloadSamplePt()
+
+    Parameters
+    ----------
+    loc : gpd.DataFrame
+        GeoPandas dataframe to be downloaded
+    date_range : LIST (STR)
+        Start date and end date as ['YYYY-MM-DD', 'YYYY-MM-DD'].
+    timeseries_dir_path : STR
+        Path to the google drive timeseries directory where output will be stored.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    print('Downloading ' + str(loc.shape[0]) + ' points')
+
+    for i in range(loc.shape[0]):
+        # print(i)
+        # i = 1
+        pt_gpd = loc.iloc[i]
+        sample_pt_coords = [pt_gpd.geometry.x, pt_gpd.geometry.y]
+        
+        loc_id = loc.loc_id.iloc[i]
+        DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range)
+
+
+
+def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
     """
     This function is used to sample imagery using Google Earth Engine
     The point coordinate is used to generate timeseries within the date_range
@@ -105,8 +141,8 @@ def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date
     ----------
     sample_pt_coords : list (float)
         List of length 2 as [x, y] coordinates.
-    sample_pt_name : str
-        pt_ts_loc1 for loc_id = 1.
+    loc_id : INT
+        loc_id for the point
     timeseries_dir_path : str
         path to the directory where results will be saved /proj_name/proj_name_pt_timeseries.
     date_range : list (str)
@@ -117,13 +153,15 @@ def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date
     None.
 
     """
+    sample_pt_name = 'pt_ts_loc' + str(loc_id)
     
     sample_pt = ee.Geometry.Point(sample_pt_coords)
     
     timeseries_dir_name = re.sub('.*/(.*)', '\\1', timeseries_dir_path)
     
     # Export S1
-    s1_pt_filename = sample_pt_name + '_s1'
+    s1_colname = 'pt_ts_loc_s1'
+    s1_pt_filename = re.sub('loc_', 'loc' + str(loc_id) +'_', s1_colname) #sample_pt_name + '_' + s1_colname
     s1_pt_filepath = os.path.join(timeseries_dir_path, s1_pt_filename + '.csv')
     
     if os.path.exists(s1_pt_filepath):
@@ -151,12 +189,16 @@ def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date
             fileNamePrefix = s1_pt_filename)
         
         task_s1.start()
+        
+        TimeseriesUpdateStatus(loc_id, s1_colname, 'Running', timeseries_dir_path)
+        
         print('Generating ' + s1_pt_filename + '.csv')
         st.write('Generating ' + s1_pt_filename + '.csv')
       
     # Export S2
     
-    s2_pt_filename = sample_pt_name + '_s2'
+    s2_colname = 'pt_ts_loc_s2'
+    s2_pt_filename = re.sub('loc_', 'loc' + str(loc_id) +'_', s2_colname) #sample_pt_name + '_s2'
     s2_pt_filepath = os.path.join(timeseries_dir_path, s2_pt_filename + '.csv')
     
     if os.path.exists(s2_pt_filepath):
@@ -202,5 +244,76 @@ def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date
         
         task_s2.start()
         
+        TimeseriesUpdateStatus(loc_id, s2_colname, 'Running', timeseries_dir_path)
+        
         print('Generating ' + s2_pt_filename + '.csv')
         st.write('Generating ' + s2_pt_filename + '.csv')
+        
+        
+        
+# %% TIME SERIES STATUS
+
+
+
+def TimeseriesStatusInit(proj_path):
+    proj_name = re.sub('.*/(.*)', '\\1', proj_path)
+    timeseries_dir_path = os.path.join(proj_path, proj_name + '_pt_timeseries')
+
+    # Create timeseries directory if it doesn't exist
+    if not os.path.exists(timeseries_dir_path): os.mkdir(timeseries_dir_path)
+    
+    # Generate status path
+    ts_status_path = os.path.join(timeseries_dir_path, 'ts_status.csv')
+    
+    # If it doesn't exist, create a blank file with ts_status
+    if not os.path.exists(ts_status_path):
+        sample_locations_path = os.path.join(proj_path, proj_name + "_sample_locations/sample_locations.shp")
+        loc = gpd.read_file(sample_locations_path)
+        # loc[['loc_id']]
+        ts_status = pd.DataFrame({'loc_id' : loc.loc_id})
+        ts_status['allcomplete'] = False
+        
+        ts_status.to_csv(ts_status_path, index= False)
+    
+    return ts_status_path
+        
+
+def rowStatus(rowList):
+    """Helper function for TimeseriesUpdateStatus
+    Checks to see if a csv file is available for all output files
+    """
+    val = all(['.csv' in str(x) for x in rowList])
+    return val
+
+def TimeseriesUpdateStatus(loc_id, colname, new_status, timeseries_dir_path):
+    """
+    Update the status of a specific loc_id and colname
+
+    Parameters
+    ----------
+    loc_id : INT
+        ID of location.
+    colname : STR
+        name of column to update.
+    new_status : STR
+        description of updated status.
+    proj_path : STR
+        path to the project.
+
+    Returns
+    -------
+    None.
+
+    """
+    ts_status_path = os.path.join(timeseries_dir_path, 'ts_status.csv')
+    ts_status = pd.read_csv(ts_status_path)
+    idx = ts_status.index[ts_status.loc_id == loc_id]
+    
+    if not colname in ts_status.columns:
+        ts_status[colname] = np.nan
+        
+    ts_status.loc[idx, colname] = new_status
+    
+    ts_status['allcomplete'] = ts_status.drop(['loc_id','allcomplete'], axis = 1).apply(rowStatus, axis = 1)
+    
+    ts_status.to_csv(ts_status_path)
