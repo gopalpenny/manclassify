@@ -13,6 +13,7 @@ import geopandas as gpd
 import ee
 import sys
 import re
+from itertools import compress
 # import ?
 
 gdrive_path = '/Users/gopal/Google Drive'
@@ -117,6 +118,8 @@ def DownloadPoints(loc, date_range, timeseries_dir_path, ts_status):
 
     """
     
+    # TimeseriesUpdateAllStatus(timeseries_dir_path)
+    
     print('Downloading ' + str(loc.shape[0]) + ' points')
 
     for i in range(loc.shape[0]):
@@ -164,9 +167,14 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
     s1_pt_filename = re.sub('loc_', 'loc' + str(loc_id) +'_', s1_colname) #sample_pt_name + '_' + s1_colname
     s1_pt_filepath = os.path.join(timeseries_dir_path, s1_pt_filename + '.csv')
     
+    s1_pt_status = TimeseriesCheckStatus(loc_id, s1_colname, timeseries_dir_path)
     if os.path.exists(s1_pt_filepath):
         print(s1_pt_filename + '.csv already exists')
         st.write(s1_pt_filename + '.csv already exists')
+    elif str(s1_pt_status) != 'nan':
+        msgs1 = s1_pt_filename + ' status is ' + str(s1_pt_status)
+        print(msgs1)
+        st.write(msgs1)
     else:
         s1_output_bands = ['HH','VV','HV','VH','angle']
         s1_ic = ee.ImageCollection("COPERNICUS/S1_GRD") \
@@ -190,7 +198,7 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
         
         task_s1.start()
         
-        TimeseriesUpdateStatus(loc_id, s1_colname, 'Running', timeseries_dir_path)
+        TimeseriesUpdateLocStatus(loc_id, s1_colname, 'Running', timeseries_dir_path)
         
         print('Generating ' + s1_pt_filename + '.csv')
         st.write('Generating ' + s1_pt_filename + '.csv')
@@ -201,9 +209,15 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
     s2_pt_filename = re.sub('loc_', 'loc' + str(loc_id) +'_', s2_colname) #sample_pt_name + '_s2'
     s2_pt_filepath = os.path.join(timeseries_dir_path, s2_pt_filename + '.csv')
     
+    s2_pt_status = TimeseriesCheckStatus(loc_id, s2_colname, timeseries_dir_path)
     if os.path.exists(s2_pt_filepath):
         print(s2_pt_filename + '.csv already exists')
         st.write(s2_pt_filename + '.csv already exists')
+    elif s2_pt_status != 'nan':
+        msgs2 = s2_pt_filename + ' status is ' + str(s2_pt_status)
+        print(msgs2)
+        st.write(msgs2)
+        st.write(type(s2_pt_status))
     else:
     
         s2_output_bands = ['B8','B4','B3','B2','clouds','cloudmask','shadows','probability']
@@ -244,7 +258,7 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
         
         task_s2.start()
         
-        TimeseriesUpdateStatus(loc_id, s2_colname, 'Running', timeseries_dir_path)
+        TimeseriesUpdateLocStatus(loc_id, s2_colname, 'Running', timeseries_dir_path)
         
         print('Generating ' + s2_pt_filename + '.csv')
         st.write('Generating ' + s2_pt_filename + '.csv')
@@ -267,25 +281,117 @@ def TimeseriesStatusInit(proj_path):
     
     # If it doesn't exist, create a blank file with ts_status
     if not os.path.exists(ts_status_path):
+        
+        ts_all_files = os.listdir(timeseries_dir_path)
+        ts_all_filenames = list(set([re.sub('.csv','',re.sub('loc[0-9]+_','loc_',x)) for x in ts_all_files]))
+        file_colnames = list(compress(ts_all_filenames, ['loc' in x for x in ts_all_filenames]))
+        
         sample_locations_path = os.path.join(proj_path, proj_name + "_sample_locations/sample_locations.shp")
         loc = gpd.read_file(sample_locations_path)
         # loc[['loc_id']]
         ts_status = pd.DataFrame({'loc_id' : loc.loc_id})
         ts_status['allcomplete'] = False
         
+        for colname in file_colnames:
+            ts_status[colname] = np.nan
+        
         ts_status.to_csv(ts_status_path, index= False)
+    
+    TimeseriesUpdateAllStatus(timeseries_dir_path)
     
     return ts_status_path
         
 
 def rowStatus(rowList):
-    """Helper function for TimeseriesUpdateStatus
+    """Helper function for TimeseriesUpdateLocStatus
     Checks to see if a csv file is available for all output files
     """
     val = all(['.csv' in str(x) for x in rowList])
     return val
 
-def TimeseriesUpdateStatus(loc_id, colname, new_status, timeseries_dir_path):
+def TimeseriesUpdateLocStatus(loc_id, colname, new_status, timeseries_dir_path):
+    """
+    Update the status of a specific loc_id and colname
+
+    Parameters
+    ----------
+    loc_id : INT
+        ID of location.
+    colname : STR
+        name of column to update.
+    new_status : STR
+        description of updated status. if 'check', update status if file exists
+    proj_path : STR
+        path to the project.
+
+    Returns
+    -------
+    None.
+
+    """
+    ts_status_path = os.path.join(timeseries_dir_path, 'ts_status.csv')
+    ts_status = pd.read_csv(ts_status_path)
+    idx = ts_status.index[ts_status.loc_id == loc_id]
+    
+    if not colname in ts_status.columns:
+        ts_status[colname] = np.nan
+        
+    # # Check to 
+    # if new_status == 'check':
+    #     loc_column_csv_filename = re.sub('loc_','loc' + str(loc_id) + '_',colname) + '.csv'
+    #     loc_column_csv_path = os.path.join(timeseries_dir_path, loc_column_csv_filename)
+    #     if os.path.exists(loc_column_csv_path):
+    #         ts_status.loc[idx, colname] = loc_column_csv_filename
+    # else:
+    ts_status.loc[idx, colname] = new_status
+        
+    ts_status.to_csv(ts_status_path, index = False)
+    
+# %%
+foo = 'hi'
+
+if foo == 'hi':
+    print('bye')
+# %%
+
+def TimeseriesUpdateAllStatus(timeseries_dir_path):
+    """
+    Update the status of all loc_id's by checking for .csv files for every colname
+
+    Parameters
+    ----------
+    timeseries_dir_path : STR
+        path to the timeseries subdirectory.
+
+    Returns
+    -------
+    None.
+
+    """
+    ts_status_path = os.path.join(timeseries_dir_path, 'ts_status.csv')
+    ts_status = pd.read_csv(ts_status_path)
+    
+    
+    all_loc = ts_status.loc_id
+    all_columns = ts_status.columns
+    
+    
+    for loc_id in all_loc:
+        for colname in all_columns:
+            loc_column_csv_filename = re.sub('loc_','loc' + str(loc_id) + '_',colname) + '.csv'
+            loc_column_csv_path = os.path.join(timeseries_dir_path, loc_column_csv_filename)
+            if os.path.exists(loc_column_csv_path):
+                idx = ts_status.index[ts_status.loc_id == loc_id]
+                ts_status.loc[idx, colname] = loc_column_csv_filename
+            # TimeseriesUpdateLocStatus(loc_id, colname, 'check', timeseries_dir_path)
+    
+    ts_status['allcomplete'] = ts_status.drop(['loc_id','allcomplete'], axis = 1).apply(rowStatus, axis = 1).to_list()
+    
+    ts_status.to_csv(ts_status_path, index = False)
+    
+
+    
+def TimeseriesCheckStatus(loc_id, colname, timeseries_dir_path):
     """
     Update the status of a specific loc_id and colname
 
@@ -309,11 +415,4 @@ def TimeseriesUpdateStatus(loc_id, colname, new_status, timeseries_dir_path):
     ts_status = pd.read_csv(ts_status_path)
     idx = ts_status.index[ts_status.loc_id == loc_id]
     
-    if not colname in ts_status.columns:
-        ts_status[colname] = np.nan
-        
-    ts_status.loc[idx, colname] = new_status
-    
-    ts_status['allcomplete'] = ts_status.drop(['loc_id','allcomplete'], axis = 1).apply(rowStatus, axis = 1)
-    
-    ts_status.to_csv(ts_status_path)
+    return str(ts_status.loc[idx, colname].to_list()[0])
