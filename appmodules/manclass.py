@@ -8,6 +8,16 @@ Created on Sun Jun 12 20:10:02 2022
 import streamlit as st
 import os
 import geopandas as gpd
+import ee
+import sys
+import re
+# import ?
+
+gdrive_path = '/Users/gopal/Google Drive'
+gdrive_ml_path = os.path.join(gdrive_path, '_Research projects/ML')
+sys.path.append(gdrive_ml_path)
+from geemod import rs
+from geemod import eesentinel as ees
 # appmodule
 
 def testfunc():
@@ -110,11 +120,16 @@ def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date
     
     sample_pt = ee.Geometry.Point(sample_pt_coords)
     
+    timeseries_dir_name = re.sub('.*/(.*)', '\\1', timeseries_dir_path)
+    
     # Export S1
     s1_pt_filename = sample_pt_name + '_s1'
     s1_pt_filepath = os.path.join(timeseries_dir_path, s1_pt_filename + '.csv')
     
-    if not os.path.exists(s1_pt_filepath):
+    if os.path.exists(s1_pt_filepath):
+        print(s1_pt_filename + '.csv already exists')
+        st.write(s1_pt_filename + '.csv already exists')
+    else:
         s1_output_bands = ['HH','VV','HV','VH','angle']
         s1_ic = ee.ImageCollection("COPERNICUS/S1_GRD") \
           .filterBounds(sample_pt) \
@@ -136,13 +151,18 @@ def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date
             fileNamePrefix = s1_pt_filename)
         
         task_s1.start()
+        print('Generating ' + s1_pt_filename + '.csv')
+        st.write('Generating ' + s1_pt_filename + '.csv')
       
     # Export S2
     
     s2_pt_filename = sample_pt_name + '_s2'
     s2_pt_filepath = os.path.join(timeseries_dir_path, s2_pt_filename + '.csv')
     
-    if not os.path.exists(s2_pt_filepath):
+    if os.path.exists(s2_pt_filepath):
+        print(s2_pt_filename + '.csv already exists')
+        st.write(s2_pt_filename + '.csv already exists')
+    else:
     
         s2_output_bands = ['B8','B4','B3','B2','clouds','cloudmask','shadows','probability']
         
@@ -181,3 +201,6 @@ def DownloadSamplePt(sample_pt_coords, sample_pt_name, timeseries_dir_path, date
             fileNamePrefix = s2_pt_filename)
         
         task_s2.start()
+        
+        print('Generating ' + s2_pt_filename + '.csv')
+        st.write('Generating ' + s2_pt_filename + '.csv')
