@@ -56,6 +56,8 @@ importlib.reload(mf)
 loc = gpd.read_file(sample_locations_path)
 
 ts_status_path = mf.TimeseriesStatusInit(proj_path)
+
+# def plot(region_status, sample_status, ts_status_path, )
 ts_status = pd.read_csv(ts_status_path)
 ts_status_downloaded = ts_status.loc[ts_status.allcomplete].loc_id
 loc_downloaded = loc.loc[loc.loc_id.isin(ts_status_downloaded)]
