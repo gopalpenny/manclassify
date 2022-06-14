@@ -61,7 +61,7 @@ allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
 # loc_id_num = loc_id
 loc_id = 1
 loc_pt = allpts[allpts.loc_id == loc_id]
-loc_pt_coords = [loc_pt.point_object.x, loc_pt.point_object.y]
+loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
 
 # %%
 
@@ -130,7 +130,8 @@ with st.sidebar:
 #     attribution="Google",
 # )
 
-m_folium = folium.Map(location = loc_pt_coords, zoom_start = 18)
+# m_folium = folium.Map()
+m_folium = folium.Map(location = loc_pt_latlon, zoom_start = 18)
 tile = folium.TileLayer(
         tiles = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attr = 'Esri',
@@ -139,7 +140,7 @@ tile = folium.TileLayer(
         control = True
         ).add_to(m_folium)
 
-m_folium.add_child(folium.Marker(location = loc_pt_coords)
+m_folium.add_child(folium.Marker(location = loc_pt_latlon))
 # point = 
 # tile1 = folium.TileLayer(
 #         tiles = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
