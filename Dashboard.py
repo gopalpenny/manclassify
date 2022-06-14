@@ -22,9 +22,11 @@ Created on Sun Jun 12 14:54:31 2022
 #   c. If sample points have data, use a different shape
 
 import streamlit as st
+st.set_page_config(layout="wide")
 import pandas as pd
 # import numpy as np
 import os
+import plotnine as p9
 # import re
 # from plotnine import *
 # import leafmap
@@ -54,6 +56,14 @@ if 'samples_status' not in st.session_state:
     st.session_state.samples_status = "Not done"
 # if 'proj_path' not in st.session_state:
 #     st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
+
+
+if 'map_theme' not in st.session_state:
+    st.session_state.map_theme = p9.theme(panel_background = p9.element_rect(fill = None),      
+                     panel_border = p9.element_rect(),
+                     panel_grid_major=p9.element_blank(),
+                     panel_grid_minor=p9.element_blank(),
+                     plot_background=p9.element_rect(fill = None))
     
 
 if st.checkbox("Display Session Variables"):
@@ -66,7 +76,7 @@ st.session_state.app_path = st.text_input("Application directory (in Google Driv
 projects = os.listdir(st.session_state.app_path)
 
 # %%
-os.walk(default_app_path)
+# os.walk(default_app_path)
 # %%
 
 st.title("Dashboard")
@@ -103,7 +113,41 @@ st.markdown(
 os.listdir(default_app_path)[0:4]
 
 # %%
+
+
+from streamlit_folium import st_folium
+import folium
+
+if 'counter' not in st.session_state:
+    st.session_state.counter = 1
+
+m = folium.Map()
+tile = folium.TileLayer(
+        tiles = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr = 'Esri',
+        name = 'Esri Satellite',
+        overlay = False,
+        control = True
+        ).add_to(m)
+# tile1 = folium.TileLayer(
+#         tiles = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+#         attr = 'Google',
+#         name = 'Google Satellite',
+#         overlay = False,
+#         control = True
+#        ).add_to(m)
+
+
+
+
+
+with st.sidebar:
+    st.number_input('num', 0, 5, 2)
     
+# col1, col2 = st.columns(2)
+
+st_folium(m, height = 300, width = 600)
+
 with st.sidebar:
     st.subheader("Project: " + st.session_state.proj_name)
     if st.checkbox('Show project files'):

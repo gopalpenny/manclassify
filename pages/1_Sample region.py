@@ -8,6 +8,7 @@ Created on Sun Jun 12 15:03:28 2022
 
 
 import streamlit as st
+st.set_page_config(page_title="Sample region", layout="wide", page_icon="🌍")
 import pandas as pd
 import geopandas as gpd
 import geemap
@@ -31,17 +32,11 @@ sample_locations_path = os.path.join(st.session_state.proj_path,st.session_state
 region_status = os.path.exists(region_shp_path)
 sample_status = os.path.exists(sample_locations_path)
 
-map_theme = p9.theme(panel_background = p9.element_rect(fill = None),      
-                     panel_border = p9.element_rect(),
-                     panel_grid_major=p9.element_blank(),
-                     panel_grid_minor=p9.element_blank(),
-                     plot_background=p9.element_rect(fill = None))
-
 if not region_status:
     p_map = p9.ggplot() + p9.geom_blank()
 else:
     region_shp = gpd.read_file(region_shp_path)
-    p_map = (p9.ggplot() + map_theme +
+    p_map = (p9.ggplot() + st.session_state.map_theme +
              p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black"))
     
     if sample_status:
