@@ -29,24 +29,22 @@ sys.path.append(gdrive_ml_path)
 # from geemod import eesentinel as ees
 
 
-
-# region_path = os.path.join(st.session_state.proj_path,"region")
-# region_shp_path = os.path.join(region_path,"region.shp")
-# sample_locations_path = os.path.join(st.session_state.proj_path,st.session_state.proj_name + "_sample_locations/sample_locations.shp")
-
 app_path = '/Users/gopal/Google Drive/_Research projects/ML/manclassify/app_data'
 proj_path = os.path.join(app_path, 'region1')
-region_shp_path = os.path.join(proj_path,'region','region.shp')
+
+sample_locations_dir_path = os.path.join(st.session_state.proj_path,st.session_state.proj_name + "_sample_locations")
+sample_locations_path = os.path.join(sample_locations_dir_path, "sample_locations.shp")
+region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
 
 proj_name = 'region1'
-sample_locations_path = os.path.join(app_path, proj_name,proj_name + "_sample_locations/sample_locations.shp")
 
 region_status = os.path.exists(region_shp_path)
 sample_status = os.path.exists(sample_locations_path)
 
 # %%
-timeseries_dir_name = proj_name + "_pt_timeseries"
-timeseries_dir_path = os.path.join(proj_path, timeseries_dir_name)
+timeseries_dir_name = proj_name + "_download_timeseries"
+timeseries_dir_path = os.path.join(proj_path, timeseries_dir_name) 
+
 
 # %%
 

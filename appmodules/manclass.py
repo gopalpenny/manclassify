@@ -29,24 +29,24 @@ def testfunc():
     
     
 # import the shapefile to the project directory
-def ImportShapefile(region_path, path_to_shp_import):
+def ImportShapefile(sample_locations_dir_path, path_to_shp_import):
     
-    region_shp_path = os.path.join(region_path,"region.shp")
+    region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
     # st.write('hello world')
-    if not os.path.isdir(region_path): os.mkdir(region_path)
+    if not os.path.isdir(sample_locations_dir_path): os.mkdir(sample_locations_dir_path)
     if os.path.isfile(region_shp_path):
         st.write('region.shp already exists')
     else:
         region_gpd = gpd.read_file(path_to_shp_import)
-        region_gpd.to_file(region_path)
+        region_gpd.to_file(sample_locations_dir_path)
         
 
 def GenerateSamples(app_path, proj_name):
     
     # Generate subdirectories
     proj_path = os.path.join(app_path,proj_name)
-    region_path = os.path.join(proj_path,"region")
-    region_shp_path = os.path.join(region_path,"region.shp")
+    sample_locations_dir_path = os.path.join(proj_path, proj_name + "_sample_locations")
+    region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
     
     
     samples_dir_name = proj_name + '_sample_locations'
@@ -148,7 +148,7 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
     loc_id : INT
         loc_id for the point
     timeseries_dir_path : str
-        path to the directory where results will be saved /proj_name/proj_name_pt_timeseries.
+        path to the directory where results will be saved /proj_name/proj_name_download_timeseries.
     date_range : list (str)
         List of length 2 as [start_date, end_date] for downloading data.
 
@@ -272,7 +272,7 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
 
 def TimeseriesStatusInit(proj_path):
     proj_name = re.sub('.*/(.*)', '\\1', proj_path)
-    timeseries_dir_path = os.path.join(proj_path, proj_name + '_pt_timeseries')
+    timeseries_dir_path = os.path.join(proj_path, proj_name + '_download_timeseries')
 
     # Create timeseries directory if it doesn't exist
     if not os.path.exists(timeseries_dir_path): os.mkdir(timeseries_dir_path)
@@ -518,3 +518,20 @@ def PlotTheme():
     return plot_theme
 
 
+
+
+def InitalizeClassDF(class_path, loc):
+    if os.path.exists(class_path):
+        class_df = pd.read_csv(class_path)
+    else:
+        class_df = pd.DataFrame(loc).drop(['geometry'], axis = 1)
+        class_df['Class'] = np.nan
+        class_df['SubClass'] = np.nan
+        class_df.to_csv(class_path, index = False)
+        
+    return class_df
+
+def UpdateClassDF(loc_id, Class, SubClass, class_path):
+    st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'Class'] = Class
+    st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'] = SubClass
+    st.session_state.class_df.to_csv(class_path, index = False)

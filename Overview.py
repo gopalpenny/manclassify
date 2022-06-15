@@ -43,23 +43,23 @@ if 'app_path' not in st.session_state:
     st.session_state['app_path'] = default_app_path
     
 if 'proj_name' not in st.session_state:
-    st.session_state.proj_name = 'region1'
+    st.session_state['proj_name'] = 'region1'
     
 if 'proj_path' not in st.session_state:
-    st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj_name)
+    st.session_state['proj_path'] = os.path.join(st.session_state.app_path, st.session_state.proj_name)
     
     
 if 'region_status' not in st.session_state:
-    st.session_state.region_status = "Not done"
+    st.session_state['region_status'] = "Not done"
     
 if 'samples_status' not in st.session_state:
-    st.session_state.samples_status = "Not done"
+    st.session_state['samples_status'] = "Not done"
 # if 'proj_path' not in st.session_state:
 #     st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
 
 
 if 'map_theme' not in st.session_state:
-    st.session_state.map_theme = p9.theme(panel_background = p9.element_rect(fill = None),      
+    st.session_state['map_theme'] = p9.theme(panel_background = p9.element_rect(fill = None),      
                      panel_border = p9.element_rect(),
                      panel_grid_major=p9.element_blank(),
                      panel_grid_minor=p9.element_blank(),

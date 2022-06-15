@@ -9,7 +9,7 @@ Created on Fri Jun 10 16:40:03 2022
 import streamlit as st
 st.set_page_config(page_title="Classify", layout="wide", page_icon="🌍")
 import pandas as pd
-# import numpy as np
+import numpy as np
 import os
 import re
 import plotnine as p9
@@ -31,18 +31,27 @@ data_path = os.path.join(gdrive_ml_path, 'manclassify/script_output', out_folder
 
 # %%
 app_path = '/Users/gopal/Google Drive/_Research projects/ML/manclassify/app_data'
-proj_path = os.path.join(app_path, 'region1')
-region_shp_path = os.path.join(proj_path,'region','region.shp')
-
 proj_name = 'region1'
-sample_locations_path = os.path.join(app_path, proj_name,proj_name + "_sample_locations/sample_locations.shp")
+proj_path = os.path.join(app_path, proj_name)
+
+sample_locations_dir_path = os.path.join(proj_path,proj_name + "_sample_locations")
+sample_locations_path = os.path.join(sample_locations_dir_path, "sample_locations.shp")
+region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
+
 
 region_status = os.path.exists(region_shp_path)
 sample_status = os.path.exists(sample_locations_path)
 
-timeseries_dir_name = proj_name + "_pt_timeseries"
+timeseries_dir_name = proj_name + "_download_timeseries"
 timeseries_dir_path = os.path.join(proj_path, timeseries_dir_name)
 
+classification_dir_name = proj_name + "_classification"
+classification_dir_path = os.path.join(proj_path, classification_dir_name)
+if not os.path.exists(classification_dir_path): os.mkdir(classification_dir_path)
+
+class_path = os.path.join(classification_dir_path, 'location_classification.csv')
+    
+    
 # %%
 import importlib
 importlib.reload(mf)
@@ -53,6 +62,14 @@ ts_status_path = mf.TimeseriesStatusInit(proj_path)
 # def plotRegionPoints(region_status, sample_status, ts_status_path, allpts):
 ts_status = pd.read_csv(ts_status_path)[['loc_id','allcomplete']]
 
+# %%
+if not 'class_df' in st.session_state:
+    st.session_state['class_df'] = mf.InitalizeClassDF(class_path, loc)
+else:
+    st.session_state['class_df'] = mf.InitalizeClassDF(class_path, loc)
+
+# %%
+# allpts needed to map (ie w geometry) which points have been downloaded
 allpts = pd.merge(loc, ts_status, 'outer', on = 'loc_id')
 allpts['Downloaded'] = pd.Categorical(allpts.allcomplete, categories = [False, True])
 allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
@@ -68,7 +85,7 @@ st.title("Pixel classification")
 
 # side_layout = st.sidebar.beta_columns([1,1])
 scol1, scol2, scol3 = st.sidebar.columns([1,2,1])
-with scol2: #side_layout[-1]:
+with st.sidebar: #scol2 # side_layout[-1]:
     loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
     
 # loc_id_num = loc_id
@@ -102,8 +119,10 @@ p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
 
 # %%
 
+st.write(st.session_state.class_df)
+# SubClass = st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass']
 
-# In[36]:
+# st.selectbox("Sub-class", on_change = mf.UpdateClassDF)
 
 
     
@@ -115,14 +134,14 @@ def next_button():
     st.session_state.counter += 1
 def prev_button():
     st.session_state.counter -= 1
-with scol1: #side_layout[0]:
-    st.text(' ')
-    st.text(' ')
-    st.button('Prev', on_click = prev_button, args = ())
-with scol3: #side_layout[-1]:
-    st.text(' ')
-    st.text(' ')
-    st.button('Next', on_click = next_button, args = ())
+# with scol1: #side_layout[0]:
+#     st.text(' ')
+#     st.text(' ')
+#     st.button('Prev', on_click = prev_button, args = ())
+# with scol3: #side_layout[-1]:
+#     st.text(' ')
+#     st.text(' ')
+#     st.button('Next', on_click = next_button, args = ())
     
 with st.sidebar:
     st.pyplot(p9.ggplot.draw(p_map))
