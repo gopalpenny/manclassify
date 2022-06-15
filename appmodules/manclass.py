@@ -422,7 +422,7 @@ def TimeseriesCheckStatus(loc_id, colname, timeseries_dir_path):
 
 
 # def GetLocTimeseries(loc_id, timeseries_dir_path, plot_theme):
-def GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme):
+def GenS1data(loc_id, timeseries_dir_path, date_range):
     s1_filename = 'pt_ts_loc' + str(loc_id) + '_s1.csv'
     s1 = pd.read_csv(os.path.join(timeseries_dir_path,s1_filename))
     
@@ -431,24 +431,26 @@ def GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme):
     s1['datestr'] = [re.sub('.*?_1SDV_([0-9T]+)_.*','\\1',x) for x in s1['image_id']]
     
     s1['datetime'] = pd.to_datetime(s1['datestr'])
-    # s1 = s1.assign(NDVI = lambda df: (df.B8 - df.B4)/(df.B8 + df.B4))
-    # # s1 = s1[['datetime','B8','B4','B3','B2','cloudmask']]
     
-    # # s1['backscatter'] = (s1['VV']**2 + s1['VH']**2) ** (1/2)
+    s1_long = s1.melt(id_vars = 'datetime', value_vars = 'backscatter')
     
-    p_s1 = (p9.ggplot(data = s1, mapping = p9.aes('datetime', 'backscatter')) + 
-      p9.geom_point() + 
-      p9.geom_smooth(span = 0.25) + 
-      # p9.xlim()+
-      # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
-      p9.scale_x_datetime(limits = pd.to_datetime(date_range), 
-                          date_labels = '%Y-%b', date_breaks = '1 year') +
-      plot_theme)
+    return s1_long
     
-    return p_s1
 
-# def GetLocTimeseries(loc_id, timeseries_dir_path, plot_theme):
-def GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme):
+
+    
+    # p_s1 = (p9.ggplot(data = s1, mapping = p9.aes('datetime', 'backscatter')) + 
+    #   p9.geom_point() + 
+    #   p9.geom_smooth(span = 0.25) + 
+    #   # p9.xlim()+
+    #   # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
+    #   p9.scale_x_datetime(limits = pd.to_datetime(date_range), 
+    #                       date_labels = '%Y-%b', date_breaks = '1 year') +
+    #   plot_theme)
+    
+    # return p_s1
+
+def GenS2data(loc_id, timeseries_dir_path, date_range):
     s2_filename = 'pt_ts_loc' + str(loc_id) + '_s2.csv'
     s2 = pd.read_csv(os.path.join(timeseries_dir_path,s2_filename))
         
@@ -458,18 +460,37 @@ def GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme):
     s2['datetime'] = pd.to_datetime(s2['datestr'])
     s2 = s2.assign(NDVI = lambda df: (df.B8 - df.B4)/(df.B8 + df.B4))
     
-    # # s2['backscatter'] = (s2['VV']**2 + s2['VH']**2) ** (1/2)
     
-    p_s2 = (p9.ggplot(data = s2.query('cloudmask == 0'), mapping = p9.aes('datetime', 'NDVI')) + 
+    s2_long = s2.melt(id_vars = ['datetime','cloudmask'], value_vars = 'NDVI')
+    
+    return s2_long
+    
+    # # s2['backscatter'] = (s2['VV']**2 + s2['VH']**2) ** (1/2)
+
+def plotTimeseries(loc_id, timeseries_dir_path, date_range):
+    
+    s1 = GenS1data(loc_id, timeseries_dir_path, date_range)
+    s2 = GenS2data(loc_id, timeseries_dir_path, date_range)
+    
+    sentinel = pd.concat([s1, s2])
+    
+
+    line_vars = ['NDVI']
+    smooth_vars = ['backscatter']
+    sentinel_cloudfree = sentinel.query('cloudmask != 1')
+    
+    p_sentinel = (p9.ggplot(data = sentinel_cloudfree, mapping = p9.aes('datetime', 'value')) + 
       p9.geom_point() + 
-      p9.geom_line() + 
+      p9.geom_line(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(line_vars)]) + 
+      p9.geom_smooth(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(smooth_vars)], span = 0.25) + 
+      p9.facet_wrap('variable',scales = 'free_y',ncol = 1) +
       # p9.xlim()+
       # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
       p9.scale_x_datetime(limits = pd.to_datetime(date_range), 
                           date_labels = '%Y-%b', date_breaks = '1 year') +
-      plot_theme)
+      PlotTheme() + p9.theme(axis_title_x = p9.element_blank()))
     
-    return p_s2
+    return p_sentinel
 
 
 def MapTheme():
@@ -484,11 +505,16 @@ def MapTheme():
 
 
 def PlotTheme():
+    strlit_color = '#0F1116'
     plot_theme = p9.theme(panel_background = p9.element_rect(fill = None),      
-                     panel_border = p9.element_rect(),
+                     panel_border = p9.element_rect(color = None),
                      panel_grid_major=p9.element_blank(),
                      panel_grid_minor=p9.element_blank(),
-                     plot_background=p9.element_rect(fill = None))
+                     axis_text = p9.element_text(color = 'white'),
+                     axis_ticks = p9.element_line(color = 'white'),
+                     axis_title = p9.element_text(color = 'white'),
+                     # plot_background=p9.element_rect(fill = 'black'),
+                     plot_background=p9.element_rect(fill = strlit_color, color = strlit_color))
     return plot_theme
 
 

@@ -58,8 +58,21 @@ allpts['Downloaded'] = pd.Categorical(allpts.allcomplete, categories = [False, T
 allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
 
 # %%
+
+
+
+# %%
+
+
+st.title("Pixel classification")
+
+# side_layout = st.sidebar.beta_columns([1,1])
+scol1, scol2, scol3 = st.sidebar.columns([1,2,1])
+with scol2: #side_layout[-1]:
+    loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
+    
 # loc_id_num = loc_id
-loc_id = 1
+# loc_id = 1
 loc_pt = allpts[allpts.loc_id == loc_id]
 loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
 
@@ -79,8 +92,9 @@ col1, col2 = st.columns(2)
 
 plot_theme = p9.theme(panel_background = p9.element_rect())
 date_range = ['2019-06-01', '2021-06-01']
-p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
-p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
+# p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
+# p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
+p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
 
 # GetLocData
 
@@ -88,15 +102,12 @@ p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 
 # %%
 
-st.title("Pixel classification")
 
 # In[36]:
 
 
     
 
-# side_layout = st.sidebar.beta_columns([1,1])
-scol1, scol2, scol3 = st.sidebar.columns([1,2,1])
 
 # %%
 
@@ -112,8 +123,6 @@ with scol3: #side_layout[-1]:
     st.text(' ')
     st.text(' ')
     st.button('Next', on_click = next_button, args = ())
-with scol2: #side_layout[-1]:
-    st.number_input('Location ID', 0, 10, 1)
     
 with st.sidebar:
     st.pyplot(p9.ggplot.draw(p_map))
@@ -140,6 +149,7 @@ tile = folium.TileLayer(
         control = True
         ).add_to(m_folium)
 
+
 m_folium.add_child(folium.Marker(location = loc_pt_latlon))
 # point = 
 # tile1 = folium.TileLayer(
@@ -155,11 +165,11 @@ m_folium.add_child(folium.Marker(location = loc_pt_latlon))
 # with col1:
 #     st.text("Col 1")
     
-with col2:
-    st.pyplot(p9.ggplot.draw(p_s1))
-    st.pyplot(p9.ggplot.draw(p_s2))
-    
 with col1:
+    st.pyplot(p9.ggplot.draw(p_sentinel))
+    # st.pyplot(p9.ggplot.draw(p_s2))
+    
+with col2:
     # st.write(m.to_streamlit())
-    st_folium(m_folium, height = 300, width = 600)
+    st_folium(m_folium, height = 400, width = 600)
 
