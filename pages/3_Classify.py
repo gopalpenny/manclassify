@@ -19,6 +19,7 @@ from streamlit_folium import st_folium
 import folium
 import geopandas as gpd
 from itertools import compress
+import math
 
   
 gdrive_path = '/Users/gopal/Google Drive'
@@ -71,18 +72,41 @@ else:
 
 # %%
 # allpts needed to map (ie w geometry) which points have been downloaded
-allpts = pd.merge(loc, ts_status, 'outer', on = 'loc_id')
+allpts = pd.merge(loc, ts_status, 'outer', on = 'loc_id').merge(st.session_state['class_df'], on = 'loc_id')
 allpts['Downloaded'] = pd.Categorical(allpts.allcomplete, categories = [False, True])
 allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
-
+allpts['lat'] = allpts.geometry.y
+allpts['lon'] = allpts.geometry.x
 # %%
 
+# filterargs = {
+#     'lon' : [-180, 180],
+#     'lat' : [-90, 90],
+#     'Class' : 'Any',
+#     'Subclass' : 'Any',
+#     'Downloaded' : 'Yes'
+#     }
+
+def FilterPts(allpts, lat_range):
+    filterpts = allpts
+    # latitude
+    filterpts = filterpts[allpts['lat'] >= lat_range[0]]
+    filterpts = filterpts[allpts['lat'] <= lat_range[1]]
+    # longitude
+    filterpts = filterpts[allpts['lon'] >= lon_range[0]]
+    filterpts = filterpts[allpts['lon'] <= lon_range[1]]
+    return filterpts
+
+# filterpts = FilterPts(allpts, lat_range)
 
 
 # %%
 
 
 st.title("Pixel classification")
+
+st_session_state = {}
+st_session_state['loc_id'] = 1
 
 # side_layout = st.sidebar.beta_columns([1,1])
 with st.sidebar: #scol2 # side_layout[-1]:
@@ -116,10 +140,9 @@ p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
 # GetLocData
 
 
-
 # %%
 
-list(allpts.loc[allpts.loc_id == loc_id, 'Downloaded'])[0]
+# list(allpts.loc[allpts.loc_id == loc_id, 'Downloaded'])[0]
 
 
 # %%
@@ -168,8 +191,14 @@ with st.sidebar:
 
 
 
+# %%
+lon_pts = allpts.geometry.x
+lat_pts = allpts.geometry.y
 
-    
+lon_min = float(math.floor(lon_pts.min()))
+lon_max = float(math.ceil(lon_pts.max()))
+lat_min = float(math.floor(lat_pts.min()))
+lat_max = float(math.ceil(lat_pts.max()))
 
 
 # %%
@@ -236,3 +265,23 @@ with col2:
     # st.write(m.to_streamlit())
     st_folium(m_folium, height = 400, width = 600)
 
+# %%
+
+# with st.sidebar:
+
+# sideexp = st.sidebar.expander('Filter points')
+# with sideexp:
+#     lat_range = st.slider('Longitude', min_value = lon_min, max_value = lon_max, 
+#               value = (lon_min, lon_max))
+#     lon_range = st.slider('Latitude', min_value = lat_min, max_value = lat_max, 
+#               value = (lat_min, lat_max))
+#     s2col1, s2col2 = sideexp.columns([1, 1])
+    
+# with s2col1:
+#     st.button('Apply filter')
+
+# with s2col2:
+#     st.button('Clear filter')
+    
+with st.expander('Selected points'):
+    st.write(pd.DataFrame(allpts).drop('geometry', axis = 1))
