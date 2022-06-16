@@ -18,6 +18,7 @@ import appmodules.manclass as mf
 from streamlit_folium import st_folium
 import folium
 import geopandas as gpd
+from itertools import compress
 
   
 gdrive_path = '/Users/gopal/Google Drive'
@@ -84,7 +85,6 @@ allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
 st.title("Pixel classification")
 
 # side_layout = st.sidebar.beta_columns([1,1])
-scol1, scol2, scol3 = st.sidebar.columns([1,2,1])
 with st.sidebar: #scol2 # side_layout[-1]:
     loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
     
@@ -119,10 +119,54 @@ p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
 
 # %%
 
-st.write(st.session_state.class_df)
-# SubClass = st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass']
+list(allpts.loc[allpts.loc_id == loc_id, 'Downloaded'])[0]
 
-# st.selectbox("Sub-class", on_change = mf.UpdateClassDF)
+
+# %%
+# st.write(st.session_state.class_df)
+Class_prev = list(st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'Class'])[0]
+Classes =  list(st.session_state.class_df.Class.unique()) + ['Input new']
+Classes = [x for x in Classes if x != '-']
+Classes = ['-'] + list(compress(Classes, [str(x) != 'nan' for x in Classes]))
+Classesidx = [i for i in range(len(Classes)) if Classes[i] == Class_prev] + [0]
+
+new_class = "-"
+
+
+scol1, scol2 = st.sidebar.columns([1,1])
+
+
+
+
+with scol1:
+    ClassBox = st.selectbox("Class: " + str(Class_prev), 
+                 options = Classes, 
+                 index = Classesidx[0])
+    if ClassBox == 'Input new':
+        new_class = st.text_input('New Class')
+        
+
+SubClass_prev = list(st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'])[0]
+# SubClasses = list(st.session_state.class_df.SubClass.unique()) + ['Input new']
+Class_subset = st.session_state.class_df #[Class_subset.Class == ClassBox]
+SubClasses = list(Class_subset.SubClass.unique()) + ['Input new']
+SubClasses = [x for x in SubClasses if x != '-']
+SubClasses = ['-'] + list(compress(SubClasses, [str(x) != 'nan' for x in SubClasses]))
+SubClassesidx = [i for i in range(len(SubClasses)) if SubClasses[i] == SubClass_prev] + [0]
+new_subclass = "-"
+        
+with scol2:
+    SubClass = st.selectbox("Sub-class: " + str(SubClass_prev), 
+                 options = SubClasses, 
+                 index = SubClassesidx[0])
+    if SubClass == 'Input new':
+        new_subclass = st.text_input('New Sub-class')
+        
+with st.sidebar:
+    st.button('Update classification', on_click = mf.UpdateClassDF,
+              args = (loc_id, ClassBox, SubClass, class_path, new_class, new_subclass,))
+
+
 
 
     

@@ -50,7 +50,12 @@ else:
 
 st.title("Sampling region")
 
-st.pyplot(p9.ggplot.draw(p_map))
+col1, col2, col3 = st.columns([1,2,1])
+
+# with col1:
+#     st.pyplot(p9.ggplot.draw(p_map))
+with col2:
+    st.pyplot(p9.ggplot.draw(p_map))
 
 # %%
 

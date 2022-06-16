@@ -122,6 +122,8 @@ def DownloadPoints(loc, date_range, timeseries_dir_path, ts_status):
     # TimeseriesUpdateAllStatus(timeseries_dir_path)
     
     print('Downloading ' + str(loc.shape[0]) + ' points')
+    pbar = st.progress(0)
+    infobox = st.empty()
 
     for i in range(loc.shape[0]):
         # print(i)
@@ -130,11 +132,15 @@ def DownloadPoints(loc, date_range, timeseries_dir_path, ts_status):
         sample_pt_coords = [pt_gpd.geometry.x, pt_gpd.geometry.y]
         
         loc_id = loc.loc_id.iloc[i]
-        DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range)
+        DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox)
+        pbar.progress((float(i) + 1) / loc.shape[0])
+        
+        
+    st.success("All sample locations are now being processed by Google Earth Engine")
 
 
 
-def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
+def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox):
     """
     This function is used to sample imagery using Google Earth Engine
     The point coordinate is used to generate timeseries within the date_range
@@ -170,12 +176,13 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
     
     s1_pt_status = TimeseriesCheckStatus(loc_id, s1_colname, timeseries_dir_path)
     if os.path.exists(s1_pt_filepath):
-        print(s1_pt_filename + '.csv already exists')
-        st.write(s1_pt_filename + '.csv already exists')
+        dummyvariable = s1_pt_filepath
+        infobox.info(s1_pt_filename + '.csv already exists')
+        # st.write(s1_pt_filename + '.csv already exists')
     elif str(s1_pt_status) != 'nan':
         msgs1 = s1_pt_filename + ' status is ' + str(s1_pt_status)
-        print(msgs1)
-        st.write(msgs1)
+        infobox.info(msgs1)
+        # st.write(msgs1)
     else:
         s1_output_bands = ['HH','VV','HV','VH','angle']
         s1_ic = ee.ImageCollection("COPERNICUS/S1_GRD") \
@@ -201,8 +208,8 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
         
         TimeseriesUpdateLocStatus(loc_id, s1_colname, 'Running', timeseries_dir_path)
         
-        print('Generating ' + s1_pt_filename + '.csv')
-        st.write('Generating ' + s1_pt_filename + '.csv')
+        infobox.info('Generating ' + s1_pt_filename + '.csv')
+        # st.write('Generating ' + s1_pt_filename + '.csv')
       
     # Export S2
     
@@ -212,13 +219,15 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
     
     s2_pt_status = TimeseriesCheckStatus(loc_id, s2_colname, timeseries_dir_path)
     if os.path.exists(s2_pt_filepath):
-        print(s2_pt_filename + '.csv already exists')
-        st.write(s2_pt_filename + '.csv already exists')
+        dummy = s2_pt_filepath
+        # print(s2_pt_filename + '.csv already exists')
+        infobox.info(s2_pt_filename + '.csv already exists')
+        
     elif s2_pt_status != 'nan':
         msgs2 = s2_pt_filename + ' status is ' + str(s2_pt_status)
-        print(msgs2)
-        st.write(msgs2)
-        st.write(type(s2_pt_status))
+        # print(msgs2)
+        infobox.info(msgs2)
+        # st.write(type(s2_pt_status))
     else:
     
         s2_output_bands = ['B8','B4','B3','B2','clouds','cloudmask','shadows','probability']
@@ -261,8 +270,8 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range):
         
         TimeseriesUpdateLocStatus(loc_id, s2_colname, 'Running', timeseries_dir_path)
         
-        print('Generating ' + s2_pt_filename + '.csv')
-        st.write('Generating ' + s2_pt_filename + '.csv')
+        # print('Generating ' + s2_pt_filename + '.csv')
+        infobox.info('Generating ' + s2_pt_filename + '.csv')
         
         
         
@@ -531,7 +540,16 @@ def InitalizeClassDF(class_path, loc):
         
     return class_df
 
-def UpdateClassDF(loc_id, Class, SubClass, class_path):
-    st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'Class'] = Class
-    st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'] = SubClass
+def UpdateClassDF(loc_id, Class, SubClass, class_path,  new_class, new_subclass):
+    if Class == 'Input new':
+        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'Class'] = new_class
+    else:
+        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'Class'] = Class
+        
+        
+    if SubClass == 'Input new':
+        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'] = new_subclass
+    else:
+        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'] = SubClass
+        
     st.session_state.class_df.to_csv(class_path, index = False)
