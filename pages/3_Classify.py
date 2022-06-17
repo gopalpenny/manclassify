@@ -32,7 +32,7 @@ data_path = os.path.join(gdrive_ml_path, 'manclassify/script_output', out_folder
 # %%
 
 # %%
-app_path = '/Users/gopal/Google Drive/_Research projects/ML/manclassify/app_data'
+app_path = '/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data'
 proj_name = 'region1'
 proj_path = os.path.join(app_path, proj_name)
 

@@ -29,7 +29,7 @@ sys.path.append(gdrive_ml_path)
 # from geemod import eesentinel as ees
 
 
-app_path = '/Users/gopal/Google Drive/_Research projects/ML/manclassify/app_data'
+app_path = '/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data'
 proj_path = os.path.join(app_path, 'region1')
 
 sample_locations_dir_path = os.path.join(st.session_state.proj_path,st.session_state.proj_name + "_sample_locations")

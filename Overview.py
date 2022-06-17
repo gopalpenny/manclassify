@@ -37,7 +37,7 @@ import plotnine as p9
 # # sys.path.append(gdrive_ml_path)
 # out_folder = 'region1'
 
-default_app_path = '/Users/gopal/Google Drive/_Research projects/ML/manclassify/app_data'
+default_app_path = '/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data'
 
 if 'app_path' not in st.session_state:
     st.session_state['app_path'] = default_app_path

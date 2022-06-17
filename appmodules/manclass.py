@@ -18,7 +18,7 @@ import plotnine as p9
 # import ?
 
 gdrive_path = '/Users/gopal/Google Drive'
-gdrive_ml_path = os.path.join(gdrive_path, '_Research projects/ML')
+gdrive_ml_path = os.path.join(gdrive_path, '_Research/Research projects/ML')
 sys.path.append(gdrive_ml_path)
 from geemod import rs
 from geemod import eesentinel as ees
