@@ -15,6 +15,8 @@ import sys
 import re
 from itertools import compress
 import plotnine as p9
+import math
+import geemap
 # import ?
 
 gdrive_path = '/Users/gopal/Google Drive'
@@ -553,3 +555,100 @@ def UpdateClassDF(loc_id, Class, SubClass, class_path,  new_class, new_subclass)
         st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'] = SubClass
         
     st.session_state.class_df.to_csv(class_path, index = False)
+    
+    
+# %%
+    
+def gis_longitude_to_utm_zone(lon):
+    """
+    Parameters
+    ----------
+    lon : float
+        Longitude.
+
+    Returns
+    -------
+    utm_zone : int
+        UTM zone.
+
+    """
+    utm_zone = (math.floor((lon + 180)/6) % 60) + 1
+    return utm_zone
+
+
+
+def gis_utm_zone_to_proj4(utm_zone):
+    """
+    Convert UTM Zone to Proj 4 string
+
+    Parameters
+    ----------
+    utm_zone : Int
+        UTM zone as numeric.
+
+    Returns
+    -------
+    Str
+        Proj 4 string for the UTM crs.
+
+    """
+    proj4_base = "+proj=utm +zone=UTM_ZONE +datum=WGS84 +units=m +no_defs"
+    return proj4_base.replace("UTM_ZONE",str(utm_zone))
+
+# %%
+
+def shift_points_m(pts_gpd, xshift_m, yshift_m):
+    """Shift points by x, y meters
+    
+
+    Parameters
+    ----------
+    pts_gpd : geopandas points DataFrame
+        Points.
+    xshift_m : float or int
+        Distance to shift points in meters.
+    yshift_m : float or in
+        Distance to shift points in meters.
+
+    Returns
+    -------
+    pts_shifted : geopandas pointsDataFrame
+        DataFrame with points shifted.
+
+    """
+    # xshift_m = 10
+    # yshift_m = 10
+    # pts_gpd = gdf
+
+    orig_crs = pts_gpd.crs
+    
+    
+    # get longitude
+    pts_4326 = pts_gpd.to_crs(4326)
+    pts_lon = pts_4326.Longitude.mean()
+    
+    # get proj4 string for UTM
+    proj4str = gis_utm_zone_to_proj4(gis_longitude_to_utm_zone(pts_lon))
+    
+    # convert to UTM
+    pts_utm_orig = pts_gpd.to_crs(proj4str)
+    
+    # get x, y to columns
+    pts_utm_orig['x'] = pts_utm_orig.geometry.x
+    pts_utm_orig['y'] = pts_utm_orig.geometry.y
+    
+    # drop geometry
+    pts_utm_update = pd.DataFrame(pts_utm_orig).drop('geometry', axis = 1)
+    
+    # adjust x, y columns
+    pts_utm_update['xnew'] = pts_utm_update.x + xshift_m
+    pts_utm_update['ynew'] = pts_utm_update.y + yshift_m
+    
+    # convert to geopandas with UTM coordinates
+    pts_shifted_utm = gpd.GeoDataFrame(pts_utm_update,  
+                                         geometry = gpd.points_from_xy(pts_utm_update.xnew, pts_utm_update.ynew),
+                                         crs = proj4str)
+    # transform to original crs
+    pts_shifted = pts_shifted_utm.to_crs(orig_crs)
+    
+    return pts_shifted

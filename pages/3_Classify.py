@@ -117,6 +117,10 @@ with st.sidebar: #scol2 # side_layout[-1]:
 loc_pt = allpts[allpts.loc_id == loc_id]
 loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
 
+adj_y_m = 10 / 1e3 / 111
+adj_x_m = 10 / 1e3 / 111
+loc_pt_latlon_adj = [loc_pt.geometry.y + adj_y, loc_pt.geometry.x + adj_x]
+
 # %%
 
 region_shp = gpd.read_file(region_shp_path)
@@ -242,7 +246,9 @@ tile = folium.TileLayer(
         ).add_to(m_folium)
 
 
-m_folium.add_child(folium.Marker(location = loc_pt_latlon))
+m_folium \
+    .add_child(folium.CircleMarker(location = loc_pt_latlon, radius = 5)) \
+    .add_child(folium.CircleMarker(location = loc_pt_latlon_adj, radius = 5, color = 'red'))
 # point = 
 # tile1 = folium.TileLayer(
 #         tiles = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
