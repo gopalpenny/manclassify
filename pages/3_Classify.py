@@ -15,6 +15,7 @@ import re
 import plotnine as p9
 import leafmap
 import appmodules.manclass as mf
+import appmodules.ClassifyPageFunctions as cpf
 from streamlit_folium import st_folium
 import folium
 import geopandas as gpd
@@ -58,7 +59,7 @@ class_path = os.path.join(classification_dir_path, 'location_classification.csv'
 import importlib
 importlib.reload(mf)
 #
-loc = gpd.read_file(sample_locations_path)
+loc = gpd.read_file(sample_locations_path).set_crs(4326)
 ts_status_path = mf.TimeseriesStatusInit(proj_path)
 
 # def plotRegionPoints(region_status, sample_status, ts_status_path, allpts):
@@ -70,6 +71,7 @@ if not 'class_df' in st.session_state:
 else:
     st.session_state['class_df'] = mf.InitalizeClassDF(class_path, loc)
 
+    
 # %%
 # allpts needed to map (ie w geometry) which points have been downloaded
 allpts = pd.merge(loc, ts_status, 'outer', on = 'loc_id').merge(st.session_state['class_df'], on = 'loc_id')
@@ -77,27 +79,38 @@ allpts['Downloaded'] = pd.Categorical(allpts.allcomplete, categories = [False, T
 allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
 allpts['lat'] = allpts.geometry.y
 allpts['lon'] = allpts.geometry.x
+
+st.session_state['allpts'] = allpts
+
+
+# %%
+lon_pts = allpts.geometry.x
+lat_pts = allpts.geometry.y
+
+lon_min = float(math.floor(lon_pts.min()))
+lon_max = float(math.ceil(lon_pts.max()))
+lat_min = float(math.floor(lat_pts.min()))
+lat_max = float(math.ceil(lat_pts.max()))
+
+
+if 'filterargs' not in st.session_state:
+    st.session_state['filterargs'] = {
+        'lon' : [lon_min, lon_max],
+        'lat' : [lat_min, lat_max],
+        'Class' : 'Any',
+        'Subclass' : 'Any',
+        'Downloaded' : 'Yes'
+        }
+
+if not 'class_df_filter' in st.session_state:
+    filterargs = st.session_state['filterargs']
+    st.session_state['class_df_filter'] = cpf.apply_filter(lat = filterargs['lat'], 
+                                                           lon = filterargs['lon'], 
+                                                           class_type = filterargs['Class'], 
+                                                           subclass_type= filterargs['Subclass'], 
+                                                           downloaded= filterargs['Downloaded'])
 # %%
 
-# filterargs = {
-#     'lon' : [-180, 180],
-#     'lat' : [-90, 90],
-#     'Class' : 'Any',
-#     'Subclass' : 'Any',
-#     'Downloaded' : 'Yes'
-#     }
-
-def FilterPts(allpts, lat_range):
-    filterpts = allpts
-    # latitude
-    filterpts = filterpts[allpts['lat'] >= lat_range[0]]
-    filterpts = filterpts[allpts['lat'] <= lat_range[1]]
-    # longitude
-    filterpts = filterpts[allpts['lon'] >= lon_range[0]]
-    filterpts = filterpts[allpts['lon'] <= lon_range[1]]
-    return filterpts
-
-# filterpts = FilterPts(allpts, lat_range)
 
 
 # %%
@@ -106,27 +119,86 @@ def FilterPts(allpts, lat_range):
 st.title("Pixel classification")
 
 st_session_state = {}
-st_session_state['loc_id'] = 1
+if 'loc_id' not in st.session_state:
+    st.session_state['loc_id'] = 1
+    
+    
+loc_id = st.session_state['loc_id']
 
+
+
+def next_button():
+    class_df_filter = st.session_state.class_df_filter
+    current_loc_id = st.session_state.loc_id
+    new_locid = class_df_filter.loc_id[class_df_filter['loc_id'] > current_loc_id].min()
+    
+    # loc_id is max for filters, then cycle back to beginning
+    if np.isnan(new_locid):
+        new_locid = class_df_filter.loc_id.min()
+    st.session_state.loc_id = int(new_locid)
+    
+def prev_button():
+    class_df_filter = st.session_state.class_df_filter
+    current_loc_id = st.session_state.loc_id
+    new_locid = class_df_filter.loc_id[class_df_filter['loc_id'] < current_loc_id].max()
+    
+    # loc_id is min for filters, then cycle back to end
+    if np.isnan(new_locid):
+        new_locid = class_df_filter.loc_id.max()
+    st.session_state.loc_id = int(new_locid)
+
+def go_to_id(id_to_go):
+    st.session_state.loc_id = int(id_to_go)
+    
+
+
+s1colA, s1colB, s1colC = st.sidebar.columns([3,1,1])
 # side_layout = st.sidebar.beta_columns([1,1])
-with st.sidebar: #scol2 # side_layout[-1]:
-    loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
+with s1colA: #scol2 # side_layout[-1]:
+    st.markdown('### Location ID: ' + str(loc_id))
+    # loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
+    
+
+go_to_id_expander = st.sidebar.expander('Go to ID')
+
+with go_to_id_expander:
+    s2colA, s2colB = go_to_id_expander.columns([1,1])
+
+
+
+with s1colC:
+    st.button('Next', on_click = next_button, args = ())
+with s1colB:
+    st.button('Prev', on_click = prev_button, args = ())
+with s2colA:
+    id_to_go = st.text_input("ID", value = str(loc_id))
+with s2colB:
+    st.text("")
+    st.text("")
+    st.button('Go', on_click = go_to_id, args = (id_to_go, ))
     
 # loc_id_num = loc_id
 # loc_id = 1
 loc_pt = allpts[allpts.loc_id == loc_id]
-loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
 
-adj_y_m = 10 / 1e3 / 111
-adj_x_m = 10 / 1e3 / 111
-loc_pt_latlon_adj = [loc_pt.geometry.y + adj_y, loc_pt.geometry.x + adj_x]
+st.write(loc_pt.crs)
+# loc_pt_utm = 
+
+adj_y_m = 0
+adj_x_m = 30
+
+loc_pt_latlon_shifted = mf.shift_points_m(loc_pt, adj_x_m, adj_y_m)
+
+loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
+loc_pt_latlon_adj = [loc_pt_latlon_shifted.geometry.y, loc_pt_latlon_shifted.geometry.x]
 
 # %%
 
 region_shp = gpd.read_file(region_shp_path)
 p_map = (p9.ggplot() + 
           p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black") +
-          p9.geom_map(data = allpts, mapping = p9.aes(fill = 'Downloaded'), shape = 'o', color = None, size = 2) +
+          p9.geom_map(data = allpts, mapping = p9.aes(), fill = 'lightgray', shape = 'o', color = None, size = 1, alpha = 1) +
+           p9.geom_map(data = st.session_state['class_df_filter'], mapping = p9.aes(fill = 'SubClass'), shape = 'o', color = None, size = 2) +
           p9.geom_map(data = loc_pt, mapping = p9.aes(), fill = 'black', shape = 'o', color = 'black', size = 4) +
           mf.MapTheme() + p9.theme(legend_position = (0.8,0.7)))
 
@@ -137,6 +209,7 @@ col1, col2 = st.columns(2)
 
 plot_theme = p9.theme(panel_background = p9.element_rect())
 date_range = ['2019-06-01', '2021-06-01']
+date_start = ['2019-06-01']
 # p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 # p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
@@ -166,6 +239,7 @@ scol1, scol2 = st.sidebar.columns([1,1])
 
 
 with scol1:
+    # date_start = st.date_input('Date', value = '2019-06-01')
     ClassBox = st.selectbox("Class: " + str(Class_prev), 
                  options = Classes, 
                  index = Classesidx[0])
@@ -196,21 +270,11 @@ with st.sidebar:
 
 
 # %%
-lon_pts = allpts.geometry.x
-lat_pts = allpts.geometry.y
-
-lon_min = float(math.floor(lon_pts.min()))
-lon_max = float(math.ceil(lon_pts.max()))
-lat_min = float(math.floor(lat_pts.min()))
-lat_max = float(math.ceil(lat_pts.max()))
-
-
-# %%
 
 def next_button():
-    st.session_state.counter += 1
+    st.session_state.loc_id += 1
 def prev_button():
-    st.session_state.counter -= 1
+    st.session_state.loc_id += 1
 # with scol1: #side_layout[0]:
 #     st.text(' ')
 #     st.text(' ')
@@ -273,21 +337,65 @@ with col2:
 
 # %%
 
-# with st.sidebar:
 
-# sideexp = st.sidebar.expander('Filter points')
-# with sideexp:
-#     lat_range = st.slider('Longitude', min_value = lon_min, max_value = lon_max, 
-#               value = (lon_min, lon_max))
-#     lon_range = st.slider('Latitude', min_value = lat_min, max_value = lat_max, 
-#               value = (lat_min, lat_max))
-#     s2col1, s2col2 = sideexp.columns([1, 1])
+
+def FilterPts(allpts, lat_range):
+    filterpts = st.session_state['allpts']
+    # latitude
+    filterpts = filterpts[allpts['lat'] >= lat_range[0]]
+    filterpts = filterpts[allpts['lat'] <= lat_range[1]]
+    # longitude
+    filterpts = filterpts[allpts['lon'] >= lon_range[0]]
+    filterpts = filterpts[allpts['lon'] <= lon_range[1]]
+    return filterpts
+
+# filterpts = FilterPts(allpts, lat_range)
+
+sideexp = st.sidebar.expander('Filter points')
+with sideexp:
+    se1col1, se1col2 = sideexp.columns([1, 1])
+    class_types = ['Any'] + list(st.session_state.class_df.Class.unique())
+    cur_class_type = st.session_state['filterargs']['Class']
+    class_types_idx = [i for i in range(len(class_types)) if class_types[i] == cur_class_type][0]
     
-# with s2col1:
-#     st.button('Apply filter')
+    with se1col1:
+        class_type = st.selectbox('Class (' + cur_class_type + ')', options = class_types, 
+                                   index = class_types_idx)
+    
+    subclass_types = ['Any'] + list(st.session_state.class_df.SubClass.unique())
+    cur_subclass_type = st.session_state['filterargs']['Subclass']
+    subclass_types_idx = [i for i in range(len(subclass_types)) if subclass_types[i] == cur_subclass_type][0]
+    with se1col2:
+        subclass_type = st.selectbox('Sub-class (' + cur_subclass_type + ')', options = subclass_types, 
+                                   index = subclass_types_idx)
+                              
+    cur_lat = st.session_state['filterargs']['lat']
+    cur_lon = st.session_state['filterargs']['lon']
+    lat_header = 'Latitude [' + str(cur_lat[0]) + \
+      ', ' + str(cur_lat[1]) + ']'
+    lon_header = 'Longitude [' + str(cur_lon[0]) + \
+      ', ' + str(cur_lon[1]) + ']'
+    # lat_header = 'Latitude ('
+    lat_range = st.slider(lat_header, min_value = lat_min, max_value = lat_max, 
+              value = (st.session_state['filterargs']['lat'][0], st.session_state['filterargs']['lat'][1]))
+    lon_range = st.slider(lon_header, min_value = lon_min, max_value = lon_max, 
+              value = (st.session_state['filterargs']['lon'][0], st.session_state['filterargs']['lon'][1]))
+    
+    download_options = ['All', 'Yes', 'No']
+    cur_download_type = st.session_state['filterargs']['Downloaded']
+    download_idx = [i for i in range(len(download_options)) if download_options[i] == cur_download_type][0]
+    downloaded = st.selectbox('Downloaded (' + cur_download_type + ')', options = download_options, index = download_idx)
+    se2col1, se2col2 = sideexp.columns([1, 1])
+    
+    
+with se2col1:
+    st.button('Apply filter', on_click=cpf.apply_filter, args = (lat_range, lon_range, class_type, subclass_type, downloaded, ))
 
-# with s2col2:
-#     st.button('Clear filter')
+with se2col2:
+    st.button('Clear filter', on_click=cpf.clear_filter, args = (lat_min, lat_max, lon_min, lon_max, ))
     
 with st.expander('Selected points'):
-    st.write(pd.DataFrame(allpts).drop('geometry', axis = 1))
+    st.write(pd.DataFrame(st.session_state.class_df_filter).drop('geometry', axis = 1))
+    # st.write(st.session_state.class_df_filter)
+    # st.dataframe(pd.DataFrame(st.session_state.class_df_filter))
+    # st.write(pd.DataFrame(allpts).drop('geometry', axis = 1))

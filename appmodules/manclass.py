@@ -625,7 +625,7 @@ def shift_points_m(pts_gpd, xshift_m, yshift_m):
     
     # get longitude
     pts_4326 = pts_gpd.to_crs(4326)
-    pts_lon = pts_4326.Longitude.mean()
+    pts_lon = pts_4326.geometry.x.mean()
     
     # get proj4 string for UTM
     proj4str = gis_utm_zone_to_proj4(gis_longitude_to_utm_zone(pts_lon))
