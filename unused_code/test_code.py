@@ -8,6 +8,7 @@ Created on Fri Jun 24 14:52:27 2022
 
 import geopandas as gpd
 import pandas as pd
+import numpy as np
 import math
 import re
 
@@ -67,6 +68,8 @@ filterargs['lon'][0]
 
 # %%
 
-test = ['Any', 'Non-farm', 'Farm', '-', 'Not sure']
+foo = np.arange(4)
 
-test in 'Farm'
+foo[foo > 1] = 99
+
+foo
