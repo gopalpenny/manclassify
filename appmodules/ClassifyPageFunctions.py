@@ -26,7 +26,6 @@ def apply_filter(lat_range, lon_range, class_type, subclass_type, downloaded):
         'Downloaded' : 'Yes'
         }
     
-    # print(lat_range)
     filterpts = st.session_state['allpts']
     
     # class
@@ -49,7 +48,7 @@ def apply_filter(lat_range, lon_range, class_type, subclass_type, downloaded):
     # longitude
     filterpts = filterpts[filterpts['lon'] >= lon_range[0]]
     filterpts = filterpts[filterpts['lon'] <= lon_range[1]]
-    st.session_state.class_df_filter = filterpts
+    st.session_state['class_df_filter'] = filterpts
     
     
 def clear_filter(lat_min, lat_max, lon_min, lon_max):
@@ -65,13 +64,19 @@ def clear_filter(lat_min, lat_max, lon_min, lon_max):
     
     
 # %% 
+# @st.cache
 def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longitude, buffer_m, 
                         return_geopandas = False):
     
     start_datetime = datetime.strptime(im_date,'%Y-%m-%d')
     end_date = datetime.strftime(start_datetime + timedelta(days = 1), '%Y-%m-%d')
-
-    pt = ee.Geometry.Point([longitude, latitude])
+    
+    try:
+        pt = ee.Geometry.Point([longitude, latitude])
+    except:
+        ee.Initialize()
+        pt = ee.Geometry.Point([longitude, latitude])
+        
     pt_bbox = pt.buffer(buffer_m, 1).bounds()
     ic = ee.ImageCollection(im_collection_id).filterBounds(pt).filterDate(im_date, end_date)
     # ic = ic.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 0.25))
@@ -114,9 +119,14 @@ def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longit
     
     return return_val
 
+# @st.cache
 def plot_array_image(im_array):
     xcenter = math.ceil(im_array.shape[0] / 2)
     ycenter = math.ceil(im_array.shape[1] / 2)
+    
+    maxval = 5000
+    
+    im_array[im_array > maxval] = maxval
     
     arrow_spacing = 1.5
     # Scale the data to [0, 255] to show as an RGB image.
@@ -128,4 +138,4 @@ def plot_array_image(im_array):
     plt.plot(xcenter, ycenter + arrow_spacing,marker = '^', color = 'white')
     plt.plot(xcenter + arrow_spacing, ycenter, marker = '<', color = 'white')
     plt.plot(xcenter - arrow_spacing, ycenter,marker = '>', color = 'white')
-    plt.show()
+    return plt

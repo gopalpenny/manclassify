@@ -21,6 +21,7 @@ import folium
 import geopandas as gpd
 from itertools import compress
 import math
+from datetime import datetime
 
   
 gdrive_path = '/Users/gopal/Google Drive'
@@ -66,7 +67,7 @@ ts_status_path = mf.TimeseriesStatusInit(proj_path)
 ts_status = pd.read_csv(ts_status_path)[['loc_id','allcomplete']]
 
 # %%
-if not 'class_df' in st.session_state:
+if 'class_df' not in st.session_state:
     st.session_state['class_df'] = mf.InitalizeClassDF(class_path, loc)
 else:
     st.session_state['class_df'] = mf.InitalizeClassDF(class_path, loc)
@@ -102,13 +103,16 @@ if 'filterargs' not in st.session_state:
         'Downloaded' : 'Yes'
         }
 
-if not 'class_df_filter' in st.session_state:
+if 'class_df_filter' not in st.session_state:
     filterargs = st.session_state['filterargs']
-    st.session_state['class_df_filter'] = cpf.apply_filter(lat = filterargs['lat'], 
-                                                           lon = filterargs['lon'], 
-                                                           class_type = filterargs['Class'], 
-                                                           subclass_type= filterargs['Subclass'], 
-                                                           downloaded= filterargs['Downloaded'])
+    # st.session_state['class_df_filter'] = 1#
+    
+    # class_df_filter set within apply_filter function
+    cpf.apply_filter(lat_range = filterargs['lat'], 
+                    lon_range = filterargs['lon'], 
+                    class_type = filterargs['Class'], 
+                    subclass_type = filterargs['Subclass'], 
+                    downloaded = filterargs['Downloaded'])
 # %%
 
 
@@ -198,7 +202,7 @@ region_shp = gpd.read_file(region_shp_path)
 p_map = (p9.ggplot() + 
           p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black") +
           p9.geom_map(data = allpts, mapping = p9.aes(), fill = 'lightgray', shape = 'o', color = None, size = 1, alpha = 1) +
-           p9.geom_map(data = st.session_state['class_df_filter'], mapping = p9.aes(fill = 'SubClass'), shape = 'o', color = None, size = 2) +
+          p9.geom_map(data = st.session_state['class_df_filter'], mapping = p9.aes(fill = 'SubClass'), shape = 'o', color = None, size = 2) +
           p9.geom_map(data = loc_pt, mapping = p9.aes(), fill = 'black', shape = 'o', color = 'black', size = 4) +
           mf.MapTheme() + p9.theme(legend_position = (0.8,0.7)))
 
@@ -311,8 +315,8 @@ tile = folium.TileLayer(
 
 
 m_folium \
-    .add_child(folium.CircleMarker(location = loc_pt_latlon, radius = 5)) \
-    .add_child(folium.CircleMarker(location = loc_pt_latlon_adj, radius = 5, color = 'red'))
+    .add_child(folium.CircleMarker(location = loc_pt_latlon, radius = 5)) #\
+    # .add_child(folium.CircleMarker(location = loc_pt_latlon_adj, radius = 5, color = 'red'))
 # point = 
 # tile1 = folium.TileLayer(
 #         tiles = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
@@ -394,7 +398,74 @@ with se2col1:
 with se2col2:
     st.button('Clear filter', on_click=cpf.clear_filter, args = (lat_min, lat_max, lon_min, lon_max, ))
     
+    
+# %%
+
+# VIEW SNAPSHOTS
+start_date = datetime.strptime(date_range[0], '%Y-%m-%d')
+end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
+
+# p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
+st_snapshots = st.expander('View snapsnots')
+stexp1col1, stexp1col2, stexp1col3, stexp1col4 = st_snapshots.columns([1,1,1,1])
+tsS2 = mf.GenS2data(loc_id, timeseries_dir_path, date_range).query('cloudmask == 0')
+tsS2 = tsS2[start_date <= tsS2['datetime']]
+tsS2 = tsS2[tsS2['datetime'] <= end_date]
+st.write(tsS2)
+
+dates = [datetime.strftime(x, '%Y-%m-%d') for x in tsS2['datetime']]
+with stexp1col1:
+    # st.write(loc_pt_latlon[1].iloc[0])
+    im_date1 = st.selectbox('Select date 1', options = dates)
+    im_array1 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
+                                     im_date = im_date1,  
+                                     bands_rgb = ['B8','B4','B3'],
+                                     latitude = loc_pt_latlon[0].iloc[0], 
+                                     longitude = loc_pt_latlon[1].iloc[0], 
+                                     buffer_m = 200, 
+                            return_geopandas = False)
+    plt1 = cpf.plot_array_image(im_array1)
+    st.pyplot(plt1)
+    
+with stexp1col2:
+    im_date2 = st.selectbox('Select date 2', options = dates)
+    im_array2 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
+                                     im_date = im_date2,  
+                                     bands_rgb = ['B8','B4','B3'],
+                                     latitude = loc_pt_latlon[0].iloc[0], 
+                                     longitude = loc_pt_latlon[1].iloc[0], 
+                                     buffer_m = 200, 
+                            return_geopandas = False)
+    plt2 = cpf.plot_array_image(im_array2)
+    st.pyplot(plt2)
+    
+with stexp1col3:
+    im_date3 = st.selectbox('Select date 3', options = dates)
+    im_array3 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
+                                     im_date = im_date3,  
+                                     bands_rgb = ['B8','B4','B3'],
+                                     latitude = loc_pt_latlon[0].iloc[0], 
+                                     longitude = loc_pt_latlon[1].iloc[0], 
+                                     buffer_m = 200, 
+                            return_geopandas = False)
+    plt3 = cpf.plot_array_image(im_array3)
+    st.pyplot(plt3)
+    
+with stexp1col4:
+    im_date4 = st.selectbox('Select date 4', options = dates)
+    im_array4 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
+                                     im_date = im_date4,  
+                                     bands_rgb = ['B8','B4','B3'],
+                                     latitude = loc_pt_latlon[0].iloc[0], 
+                                     longitude = loc_pt_latlon[1].iloc[0], 
+                                     buffer_m = 200, 
+                            return_geopandas = False)
+    plt4 = cpf.plot_array_image(im_array4)
+    st.pyplot(plt4)
+    
+    
 with st.expander('Selected points'):
+    # st.write(st.session_state.class_df_filter)
     st.write(pd.DataFrame(st.session_state.class_df_filter).drop('geometry', axis = 1))
     # st.write(st.session_state.class_df_filter)
     # st.dataframe(pd.DataFrame(st.session_state.class_df_filter))
