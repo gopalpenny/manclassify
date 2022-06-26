@@ -586,33 +586,58 @@ def PlotTheme():
 
 
 def InitializeClassDF(class_path, loc):
-    if os.path.exists(class_path):
+    proj_years = st.session_state['proj_vars']['proj_years']
+    
+    if os.path.exists(class_path): 
         class_df = pd.read_csv(class_path)
     else:
         class_df = pd.DataFrame(loc).drop(['geometry'], axis = 1)
         class_df['Class'] = np.nan
         class_df['SubClass'] = np.nan
-        class_df['Year'] = st.session_state['proj_vars']['classification_year_default']
-        class_df.to_csv(class_path, index = False)
+        # class_df['Year'] = year
+    
+    # OLD CODE WHEN I TRIED PUTTING ALL YEARS IN ONE CSV (WAS TOO SLOW)
+    # class_df_blank = pd.DataFrame(loc).drop(['geometry'], axis = 1)
+    # class_df_blank['Class'] = np.nan
+    # class_df_blank['SubClass'] = np.nan
+    
+    # if os.path.exists(class_path):
+    #     class_df = pd.read_csv(class_path)
+    #     class_df_years = list(set(class_df['Year']))
+        
+    #     proj_years_missing = [y for y in proj_years if y not in class_df_years]
+    #     for i in range(len(proj_years_missing)):
+    #         class_df_blank['Year'] = proj_years_missing[i]
+    #         class_df = class_df.append(class_df_blank, ignore_index = True)
+        
+    # else:
+    #     # add section for each year
+    #     for i in range(len(proj_years)):
+    #         class_df_blank['Year'] = proj_years[i]
+    #         if i == 0:
+    #             class_df = class_df_blank
+    #         else:
+    #             class_df = class_df.append(class_df_blank, ignore_index = True)
+    #     class_df.to_csv(class_path, index = False)
         
     return class_df
 
 def UpdateClassDF(loc_id, Class, SubClass, class_path,  new_class, new_subclass, year):
     loc_idx = st.session_state.class_df.loc_id == loc_id
-    year_idx = st.session_state.class_df.Year == year
-    idx = [x & y for (x, y) in zip(loc_idx, year_idx)]
+    # year_idx = st.session_state.class_df.Year == year
+    # idx = [x & y for (x, y) in zip(loc_idx, year_idx)]
     if Class == 'Input new':
-        st.session_state.class_df.loc[idx, 'Class'] = new_class
+        st.session_state.class_df.loc[loc_idx, 'Class'] = new_class
     else:
-        st.session_state.class_df.loc[idx, 'Class'] = Class
+        st.session_state.class_df.loc[loc_idx, 'Class'] = Class
         
         
     if SubClass == 'Input new':
-        st.session_state.class_df.loc[idx, 'SubClass'] = new_subclass
+        st.session_state.class_df.loc[loc_idx, 'SubClass'] = new_subclass
     else:
-        st.session_state.class_df.loc[idx, 'SubClass'] = SubClass
+        st.session_state.class_df.loc[loc_idx, 'SubClass'] = SubClass
     
-    st.session_state.class_df.loc[idx, 'Year'] = year
+    st.session_state.class_df.loc[loc_idx, 'Year'] = year
         
     st.session_state.class_df.to_csv(class_path, index = False)
     

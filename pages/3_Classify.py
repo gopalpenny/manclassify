@@ -201,7 +201,7 @@ with s2colB:
     classification_year = st.session_state['classification_year']
     idx_class_year = [i for i in range(len(proj_years)) if proj_years[i] == classification_year][0]
     # year_to_go = st.text_input("Year", value = str(st.session_state['classification_year']))
-    year_to_go = st.selectbox("Year", options = proj_years, index = idx_class_year)
+    year_to_go = st.selectbox("Year", options = proj_years, index =  idx_class_year)
 with s2colC:
     st.text("")
     st.text("")
