@@ -27,9 +27,13 @@ import pandas as pd
 # import numpy as np
 import os
 import plotnine as p9
+from datetime import datetime
+import appmodules.manclass as mf
 # import re
 # from plotnine import *
 # import leafmap
+
+#%%
 
 
 # gdrive_path = '/Users/gopal/Google Drive'
@@ -56,6 +60,15 @@ if 'samples_status' not in st.session_state:
     st.session_state['samples_status'] = "Not done"
 # if 'proj_path' not in st.session_state:
 #     st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
+
+if 'proj_vars' not in st.session_state:
+    st.session_state['proj_vars'] = mf.readProjectVars(st.session_state['proj_path'])
+    
+# if 'classification_start' not in st.session_state:
+#     st.session_state['classification_start'] = {'year' : 2019,
+#                                                 'month' : st.session_state['proj_vars']['classification_start_month'],
+#                                                 'day' : st.session_state['proj_vars']['classification_start_day']}
+    
 
 
 if 'map_theme' not in st.session_state:
@@ -84,8 +97,38 @@ st.title("Dashboard")
 st.session_state.proj_name = st.selectbox("Select a project", options = tuple(projects))
 st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj_name)
 
+
+start_date_str = (st.session_state['proj_vars']['classification_start_month'] + ' ' +
+                  str(st.session_state['proj_vars']['classification_start_day']) + ', ' +
+                  str(st.session_state['proj_vars']['classification_year_default']))
+st.markdown('### Start date for classification year (current: )', )
+m1 = st.columns([1, 1, 1, 2])
+
+
+with m1[0]:
+    year_default = st.number_input("Default year", min_value = 0, max_value = 3000, value = 2019)
+    
+with m1[1]:
+    year_start_month = [datetime.strftime(datetime.strptime('2000-' + str(x) + '-01','%Y-%m-%d'), '%B') for x in range(1,13)]
+    start_month = st.selectbox("Month", options = year_start_month)
+with m1[2]:
+    start_day = st.number_input("Day", min_value = 1, max_value = 31, value = 1)
+# with m1[2]:
+#     st.markdown('####')
+#     st.markdown('#### Start day for classification year')
+with m1[3]:
+    st.markdown('#')
+    st.button('Set start date for classification year', 
+              on_click = mf.setProjectStartDate, 
+              args = (year_default, start_month, start_day, st.session_state['proj_path'], ))
+    
 data_path_files = pd.DataFrame({'Files': os.listdir(st.session_state.proj_path)})
 
+
+st.write(st.session_state['proj_vars'])
+
+
+st.markdown('### App overview')
 
 st.markdown(
     """

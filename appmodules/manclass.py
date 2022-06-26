@@ -17,6 +17,7 @@ from itertools import compress
 import plotnine as p9
 import math
 import geemap
+import json
 # import ?
 
 gdrive_path = '/Users/gopal/Google Drive'
@@ -30,6 +31,30 @@ from datetime import datetime
 
 def testfunc():
     st.write("success")
+    
+def saveProjectVars(vars_dict, proj_path):
+    vars_path = os.path.join(proj_path, "project_vars.json")
+    json.dump(vars_dict, open(vars_path, 'w'))
+    
+def readProjectVars(proj_path):
+    vars_path = os.path.join(proj_path, "project_vars.json")
+    
+    if os.path.exists(vars_path):
+        vars_dict = json.load(open(vars_path))
+    else:
+        vars_dict = {'classification_year_default' : 2019,
+                     'classification_start_month' : 'January',
+                     'classification_start_day' : 1}
+        saveProjectVars(vars_dict, proj_path)
+    
+    return vars_dict
+
+def setProjectStartDate(year, month, day, proj_path):
+    st.session_state['proj_vars']['classification_year_default'] = year
+    st.session_state['proj_vars']['classification_start_month'] = month
+    st.session_state['proj_vars']['classification_start_day'] = day
+    vars_dict = st.session_state['proj_vars']
+    saveProjectVars(vars_dict, proj_path)
     
     
 # import the shapefile to the project directory

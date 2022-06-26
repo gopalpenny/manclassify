@@ -167,6 +167,7 @@ with s1colA: #scol2 # side_layout[-1]:
 go_to_expander = st.sidebar.expander('Go to')
 
 with go_to_expander:
+    st.text('go to year not working')
     s2colA, s2colB, s2colC = go_to_expander.columns([2,2,1])
 
 
@@ -180,7 +181,7 @@ with s1colB:
 with s2colA:
     id_to_go = st.text_input("ID", value = str(loc_id))
 with s2colB:
-    year_to_go = st.text_input("Year", value = str(year_selected))
+    year_to_go = st.text_input("Year", value = str(st.session_state['proj_vars']['classification_year_default']))
 with s2colC:
     st.text("")
     st.text("")
