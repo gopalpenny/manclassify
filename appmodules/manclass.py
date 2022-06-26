@@ -587,19 +587,41 @@ def PlotTheme():
 
 def InitializeClassDF(class_path, loc):
     proj_years = st.session_state['proj_vars']['proj_years']
+    subclass_years = ['Subclass' + str(y) for y in proj_years]
+    # default_subclass_year = 'Subclass' + str(st.session_state['proj_vars']['classification_year_default'])
+    
+    # Single year in file
+    # if os.path.exists(class_path): 
+    #     class_df = pd.read_csv(class_path)
+    # else:
+    #     class_df = pd.DataFrame(loc).drop(['geometry'], axis = 1)
+    #     class_df['Class'] = np.nan
+    #     class_df['Subclass'] = np.nan
+    #     class_df['Year'] = st.session_state['proj_vars']['classification_year_default']
     
     if os.path.exists(class_path): 
         class_df = pd.read_csv(class_path)
+        subclass_columns = [col for col in list(class_df.columns) if 'Subclass' in col]
+        # print(subclass_columns)
+        proj_years_missing = [y for y in subclass_years if y not in subclass_columns]
+        
+        for i in range(len(proj_years_missing)):
+            if proj_years_missing[i] not in list(class_df.columns): # double checking to ensure we don't replace existing column
+                class_df[proj_years_missing[i]] = str(np.nan)
+            
     else:
         class_df = pd.DataFrame(loc).drop(['geometry'], axis = 1)
         class_df['Class'] = np.nan
-        class_df['SubClass'] = np.nan
-        # class_df['Year'] = year
-    
+        
+        for i in range(len(subclass_years)):
+            if subclass_years[i] not in list(class_df.columns): # double checking to ensure we don't replace existing column
+                class_df[subclass_years[i]] = str(np.nan)
+        
+        
     # OLD CODE WHEN I TRIED PUTTING ALL YEARS IN ONE CSV (WAS TOO SLOW)
     # class_df_blank = pd.DataFrame(loc).drop(['geometry'], axis = 1)
     # class_df_blank['Class'] = np.nan
-    # class_df_blank['SubClass'] = np.nan
+    # class_df_blank['Subclass'] = np.nan
     
     # if os.path.exists(class_path):
     #     class_df = pd.read_csv(class_path)
@@ -622,8 +644,12 @@ def InitializeClassDF(class_path, loc):
         
     return class_df
 
-def UpdateClassDF(loc_id, Class, SubClass, class_path,  new_class, new_subclass, year):
+def UpdateClassDF(loc_id, Class, Subclass, class_path,  new_class, new_subclass, subclass_year):
     loc_idx = st.session_state.class_df.loc_id == loc_id
+    
+    
+    # if subclass_year not in list(st.session_state.class_df.columns): # double checking to ensure we don't replace existing column
+    #     st.session_state.class_df[subclass_year] = np.nan
     # year_idx = st.session_state.class_df.Year == year
     # idx = [x & y for (x, y) in zip(loc_idx, year_idx)]
     if Class == 'Input new':
@@ -632,12 +658,10 @@ def UpdateClassDF(loc_id, Class, SubClass, class_path,  new_class, new_subclass,
         st.session_state.class_df.loc[loc_idx, 'Class'] = Class
         
         
-    if SubClass == 'Input new':
-        st.session_state.class_df.loc[loc_idx, 'SubClass'] = new_subclass
+    if Subclass == 'Input new':
+        st.session_state.class_df.loc[loc_idx, subclass_year] = new_subclass
     else:
-        st.session_state.class_df.loc[loc_idx, 'SubClass'] = SubClass
-    
-    st.session_state.class_df.loc[loc_idx, 'Year'] = year
+        st.session_state.class_df.loc[loc_idx, subclass_year] = Subclass
         
     st.session_state.class_df.to_csv(class_path, index = False)
     

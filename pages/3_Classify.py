@@ -28,6 +28,7 @@ from collections import OrderedDict
 
 import importlib
 importlib.reload(mf)
+importlib.reload(cpf)
 
   
 gdrive_path = '/Users/gopal/Google Drive'
@@ -58,8 +59,6 @@ timeseries_dir_path = os.path.join(proj_path, timeseries_dir_name)
 classification_dir_name = proj_name + "_classification"
 classification_dir_path = os.path.join(proj_path, classification_dir_name)
 if not os.path.exists(classification_dir_path): os.mkdir(classification_dir_path)
-
-class_path = os.path.join(classification_dir_path, 'location_classification.csv')
     
     
 # %%
@@ -74,6 +73,13 @@ ts_status = pd.read_csv(ts_status_path)[['loc_id','allcomplete']]
 # %%
 if 'classification_year' not in st.session_state:
     st.session_state['classification_year'] = st.session_state['proj_vars']['classification_year_default']
+
+if 'subclass_year' not in st.session_state:
+    st.session_state['subclass_year'] = 'Subclass' + str(st.session_state['classification_year'])
+    
+
+
+class_path = os.path.join(classification_dir_path, 'location_classification.csv')
     
 # %%
 if 'class_df' not in st.session_state:
@@ -136,7 +142,7 @@ if 'class_df_filter' not in st.session_state:
 # %%
 
 
-st.title("Pixel classification")
+st.title('Pixel classification (' + str(st.session_state['classification_year']) + ')')
 
 st_session_state = {}
 if 'loc_id' not in st.session_state:
@@ -170,10 +176,12 @@ def prev_button():
 def go_to_id(id_to_go, year):
     st.session_state.loc_id = int(id_to_go)
     st.session_state.classification_year = int(year)
+    st.session_state.subclass_year = 'Subclass' + str(year)
     
 
 
 s1colA, s1colB, s1colC = st.sidebar.columns([3,1,1])
+
 # side_layout = st.sidebar.beta_columns([1,1])
 with s1colA: #scol2 # side_layout[-1]:
     st.markdown('### Location ID: ' + str(loc_id))
@@ -186,7 +194,7 @@ with s1colA: #scol2 # side_layout[-1]:
 go_to_expander = st.sidebar.expander('Go to')
 
 with go_to_expander:
-    st.text('go to year not working')
+    # st.text('go to year not working')
     s2colA, s2colB, s2colC = go_to_expander.columns([2,2,1])
 
 with s1colC:
@@ -201,7 +209,7 @@ with s2colB:
     classification_year = st.session_state['classification_year']
     idx_class_year = [i for i in range(len(proj_years)) if proj_years[i] == classification_year][0]
     # year_to_go = st.text_input("Year", value = str(st.session_state['classification_year']))
-    year_to_go = st.selectbox("Year", options = proj_years, index =  idx_class_year)
+    year_to_go = st.selectbox("Year", options = proj_years, index = idx_class_year)
 with s2colC:
     st.text("")
     st.text("")
@@ -228,7 +236,7 @@ region_shp = gpd.read_file(region_shp_path)
 p_map = (p9.ggplot() + 
           p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black") +
           p9.geom_map(data = allpts, mapping = p9.aes(), fill = 'lightgray', shape = 'o', color = None, size = 1, alpha = 1) +
-          p9.geom_map(data = st.session_state['class_df_filter'], mapping = p9.aes(fill = 'SubClass'), shape = 'o', color = None, size = 2) +
+          p9.geom_map(data = st.session_state['class_df_filter'], mapping = p9.aes(fill = st.session_state['subclass_year']), shape = 'o', color = None, size = 2) +
           p9.geom_map(data = loc_pt, mapping = p9.aes(), fill = 'black', shape = 'o', color = 'black', size = 4) +
           mf.MapTheme() + p9.theme(legend_position = (0.8,0.7)))
 
@@ -239,19 +247,6 @@ col1, col2 = st.columns(2)
 
 plot_theme = p9.theme(panel_background = p9.element_rect())
 
-start_date_string_full = (str(st.session_state['classification_year']) + '-' + 
-                          st.session_state['proj_vars']['classification_start_month'] + '-' +
-                          str(st.session_state['proj_vars']['classification_start_day']))
-
-start_datetime = datetime.strptime(start_date_string_full, '%Y-%B-%d')
-end_datetime = start_datetime + relativedelta(years = 1)
-datetime_range = [start_datetime, end_datetime]
-date_range = [datetime.strftime(x, '%Y-%m-%d') for x in datetime_range]
-start_date = date_range[0]
-# date_range = ['2019-06-01', '2020-06-01']
-# p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
-# p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
-p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
 
 # GetLocData
 
@@ -284,27 +279,27 @@ with scol1:
                  index = Classesidx[0])
     if ClassBox == 'Input new':
         new_class = st.text_input('New Class')
-        
-
-SubClass_prev = list(st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'])[0]
-# SubClasses = list(st.session_state.class_df.SubClass.unique()) + ['Input new']
+   
+Subclass_prev = list(st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, st.session_state['subclass_year']])[0]
+# Subclasses = list(st.session_state.class_df.Subclass.unique()) + ['Input new']
 Class_subset = st.session_state.class_df #[Class_subset.Class == ClassBox]
-SubClasses = list(Class_subset.SubClass.unique()) + ['Input new']
-SubClasses = [x for x in SubClasses if x != '-']
-SubClasses = ['-'] + list(compress(SubClasses, [str(x) != 'nan' for x in SubClasses]))
-SubClassesidx = [i for i in range(len(SubClasses)) if SubClasses[i] == SubClass_prev] + [0]
+Subclasses = list(Class_subset[st.session_state['subclass_year']].unique()) + ['Input new']
+Subclasses = [x for x in Subclasses if x != '-']
+Subclasses = ['-'] + list(compress(Subclasses, [str(x) != 'nan' for x in Subclasses]))
+Subclassesidx = [i for i in range(len(Subclasses)) if Subclasses[i] == Subclass_prev] + [0]
 new_subclass = "-"
         
 with scol2:
-    SubClass = st.selectbox("Sub-class: " + str(SubClass_prev), 
-                 options = SubClasses, 
-                 index = SubClassesidx[0])
-    if SubClass == 'Input new':
+    Subclass = st.selectbox("Sub-class: " + str(Subclass_prev), 
+                 options = Subclasses, 
+                 index = Subclassesidx[0])
+    if Subclass == 'Input new':
         new_subclass = st.text_input('New Sub-class')
         
 with st.sidebar:
     st.button('Update classification', on_click = mf.UpdateClassDF,
-              args = (loc_id, ClassBox, SubClass, class_path, new_class, new_subclass, st.session_state['classification_year'], ))
+              args = (loc_id, ClassBox, Subclass, class_path, new_class, new_subclass, st.session_state['subclass_year'], ))
+    # test
 
 
 
@@ -365,6 +360,20 @@ m_folium \
 
 # with col1:
 #     st.text("Col 1")
+
+start_date_string_full = (str(st.session_state['classification_year']) + '-' + 
+                          st.session_state['proj_vars']['classification_start_month'] + '-' +
+                          str(st.session_state['proj_vars']['classification_start_day']))
+
+start_datetime = datetime.strptime(start_date_string_full, '%Y-%B-%d')
+end_datetime = start_datetime + relativedelta(years = 1)
+datetime_range = [start_datetime, end_datetime]
+date_range = [datetime.strftime(x, '%Y-%m-%d') for x in datetime_range]
+start_date = date_range[0]
+# date_range = ['2019-06-01', '2020-06-01']
+# p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
+# p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
+p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
     
 with col1:
     st.pyplot(p9.ggplot.draw(p_sentinel))
@@ -401,7 +410,7 @@ with sideexp:
         class_type = st.selectbox('Class (' + cur_class_type + ')', options = class_types, 
                                    index = class_types_idx)
     
-    subclass_types = ['Any'] + list(st.session_state.class_df.SubClass.unique())
+    subclass_types = ['Any'] + list(st.session_state.class_df[st.session_state['subclass_year']].unique())
     cur_subclass_type = st.session_state['filterargs']['Subclass']
     subclass_types_idx = [i for i in range(len(subclass_types)) if subclass_types[i] == cur_subclass_type][0]
     with se1col2:

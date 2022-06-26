@@ -34,7 +34,7 @@ def apply_filter(lat_range, lon_range, class_type, subclass_type, downloaded):
         
     # subclass
     if subclass_type != 'Any':
-        filterpts = filterpts[filterpts['SubClass'] == subclass_type]
+        filterpts = filterpts[filterpts[st.session_state['subclass_year']] == subclass_type]
         
         
     # filter for downloaded points
