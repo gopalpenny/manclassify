@@ -65,9 +65,10 @@ def clear_filter(lat_min, lat_max, lon_min, lon_max):
     
 # %% 
 # @st.cache
-def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longitude, buffer_m, 
+def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longitude, buffer_px, 
                         return_geopandas = False):
     
+        
     start_datetime = datetime.strptime(im_date,'%Y-%m-%d')
     end_date = datetime.strftime(start_datetime + timedelta(days = 1), '%Y-%m-%d')
     
@@ -77,19 +78,34 @@ def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longit
         ee.Initialize()
         pt = ee.Geometry.Point([longitude, latitude])
         
-    pt_bbox = pt.buffer(buffer_m, 1).bounds()
+    # pt_bbox = pt.buffer(buffer_m, 1).bounds()
     ic = ee.ImageCollection(im_collection_id).filterBounds(pt).filterDate(im_date, end_date)
     # ic = ic.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 0.25))
     im = ic.first().select(bands_rgb)
 
     if return_geopandas:
         im = im.addBands(im.pixelCoordinates(im.projection()))
-
+    
+    # buffer_px = 10
+    # generate kernel
+    imdim = (buffer_px * 2) + 1
+    kernel_list = ee.List.repeat(1, imdim)
+    kernel_lists = ee.List.repeat(kernel_list, imdim)
+    kernel = ee.Kernel.fixed(imdim, imdim, kernel_lists, 
+                             x = buffer_px + 1, y = buffer_px + 1)
+    
+    
+    im_eearray = im.neighborhoodToArray(kernel)
+    
+    
     # sample the region and return array from ee to python
-    im_dict = im.sampleRectangle(region = pt_bbox, properties = []).getInfo()
+    im_dict = im_eearray.reduceRegion(ee.Reducer.first(), geometry = pt, scale = 10).getInfo()
+    # # old, with bounding box:
+    # im_dict = im.sampleRectangle(region = pt_bbox, properties = []).getInfo()
+    # im_props = im_dict['properties']
 
     # len(im_dict['properties'])
-    im_props = im_dict['properties']
+    im_props = im_dict
     im_props_keys = list(im_props.keys())
 
     if return_geopandas:
@@ -119,18 +135,51 @@ def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longit
     
     return return_val
 
+
+# %% 
+# Cached funtions for each date to more quickly disply images on reload
+
+@st.cache
+def get_image_near_point1(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array
+
+@st.cache
+def get_image_near_point2(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array
+
+@st.cache
+def get_image_near_point3(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array
+
+
+@st.cache
+def get_image_near_point4(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array
+
 # @st.cache
 def plot_array_image(im_array):
-    xcenter = math.ceil(im_array.shape[0] / 2)
-    ycenter = math.ceil(im_array.shape[1] / 2)
+    xcenter = math.floor(im_array.shape[0] / 2)
+    ycenter = math.floor(im_array.shape[1] / 2)
     
     maxval = 5000
     
     im_array[im_array > maxval] = maxval
     
-    arrow_spacing = 1.5
+    arrow_spacing = 1
     # Scale the data to [0, 255] to show as an RGB image.
-    rgb_img_test = (255*((im_array - 0)/5000)).astype('uint8')
+    rgb_img_test = (255*((im_array - 0)/maxval)).astype('uint8')
     plt.figure(figsize = (5,5),dpi = 100)
     plt.axis('off')
     plt.imshow(rgb_img_test)

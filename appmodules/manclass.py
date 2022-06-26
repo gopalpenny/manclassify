@@ -24,6 +24,8 @@ gdrive_ml_path = os.path.join(gdrive_path, '_Research/Research projects/ML')
 sys.path.append(gdrive_ml_path)
 from geemod import rs
 from geemod import eesentinel as ees
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
 # appmodule
 
 def testfunc():
@@ -483,21 +485,35 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range):
     s1 = GenS1data(loc_id, timeseries_dir_path, date_range)
     s2 = GenS2data(loc_id, timeseries_dir_path, date_range)
     
+    datetime_range = [datetime.strptime(x, '%Y-%m-%d') for x in date_range]
+    
     sentinel = pd.concat([s1, s2])
     
+    start_date = datetime_range[0]
+    end_date = datetime_range[1]
+    pre_date = start_date - relativedelta(months = 6)
+    post_date = end_date + relativedelta(months = 6)
+    
+    month_increment = 4
+    length_out = 4
+    month_seq = pd.DataFrame({'datetime':[start_date + relativedelta(months = x) for x in np.arange(length_out) * month_increment]})
 
     line_vars = ['NDVI']
     smooth_vars = ['backscatter']
     sentinel_cloudfree = sentinel.query('cloudmask != 1')
     
     p_sentinel = (p9.ggplot(data = sentinel_cloudfree, mapping = p9.aes('datetime', 'value')) + 
+      p9.geom_vline(data = month_seq, mapping = p9.aes(xintercept = 'datetime'), alpha = 0.3) +
+      p9.annotate('rect',xmin = pre_date, xmax = start_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
+      p9.annotate('rect',xmin = end_date, xmax = post_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
+      # p9.geom_rect(mapping = p9.aes(xmin = pre_date, xmax = post_date, ymin = -np.Inf, ymax = np.Inf), fill = 'black', alpha = 0.3) +
       p9.geom_point() + 
       p9.geom_line(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(line_vars)]) + 
       p9.geom_smooth(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(smooth_vars)], span = 0.25) + 
       p9.facet_wrap('variable',scales = 'free_y',ncol = 1) +
       # p9.xlim()+
       # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
-      p9.scale_x_datetime(limits = pd.to_datetime(date_range), 
+      p9.scale_x_datetime(limits = [pre_date, post_date], 
                           date_labels = '%Y-%b', date_breaks = '1 year') +
       PlotTheme() + p9.theme(axis_title_x = p9.element_blank()))
     

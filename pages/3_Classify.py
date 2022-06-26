@@ -21,7 +21,8 @@ import folium
 import geopandas as gpd
 from itertools import compress
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
+from collections import OrderedDict
 
   
 gdrive_path = '/Users/gopal/Google Drive'
@@ -163,20 +164,24 @@ with s1colA: #scol2 # side_layout[-1]:
     # loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
     
 
-go_to_id_expander = st.sidebar.expander('Go to ID')
+go_to_expander = st.sidebar.expander('Go to')
 
-with go_to_id_expander:
-    s2colA, s2colB = go_to_id_expander.columns([1,1])
+with go_to_expander:
+    s2colA, s2colB, s2colC = go_to_expander.columns([2,2,1])
 
 
+year_selected = 2019
 
 with s1colC:
     st.button('Next', on_click = next_button, args = ())
 with s1colB:
     st.button('Prev', on_click = prev_button, args = ())
+    
 with s2colA:
     id_to_go = st.text_input("ID", value = str(loc_id))
 with s2colB:
+    year_to_go = st.text_input("Year", value = str(year_selected))
+with s2colC:
     st.text("")
     st.text("")
     st.button('Go', on_click = go_to_id, args = (id_to_go, ))
@@ -185,7 +190,7 @@ with s2colB:
 # loc_id = 1
 loc_pt = allpts[allpts.loc_id == loc_id]
 
-st.write(loc_pt.crs)
+# st.write(loc_pt.crs)
 # loc_pt_utm = 
 
 adj_y_m = 0
@@ -212,7 +217,7 @@ col1, col2 = st.columns(2)
 # %%
 
 plot_theme = p9.theme(panel_background = p9.element_rect())
-date_range = ['2019-06-01', '2021-06-01']
+date_range = ['2019-06-01', '2020-06-01']
 date_start = ['2019-06-01']
 # p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 # p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
@@ -411,55 +416,38 @@ stexp1col1, stexp1col2, stexp1col3, stexp1col4 = st_snapshots.columns([1,1,1,1])
 tsS2 = mf.GenS2data(loc_id, timeseries_dir_path, date_range).query('cloudmask == 0')
 tsS2 = tsS2[start_date <= tsS2['datetime']]
 tsS2 = tsS2[tsS2['datetime'] <= end_date]
-st.write(tsS2)
 
-dates = [datetime.strftime(x, '%Y-%m-%d') for x in tsS2['datetime']]
+# dates_datetime = tsS2[datetime.strftime(tsS2['datetime'],'%Y'),'datetime']
+dates_datetime = list(OrderedDict.fromkeys(tsS2['datetime']))
+dates_str = [datetime.strftime(x, '%Y-%m-%d') for x in dates_datetime]
+
+buffer_px = 10
+
 with stexp1col1:
     # st.write(loc_pt_latlon[1].iloc[0])
-    im_date1 = st.selectbox('Select date 1', options = dates)
-    im_array1 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
-                                     im_date = im_date1,  
-                                     bands_rgb = ['B8','B4','B3'],
-                                     latitude = loc_pt_latlon[0].iloc[0], 
-                                     longitude = loc_pt_latlon[1].iloc[0], 
-                                     buffer_m = 200, 
-                            return_geopandas = False)
+    # im_date1 = st.selectbox('Select date 1', options = [dates_str[i] for i in range(len(dates)) if re.sub('.*\\-([0-9]+)\\-.*','\\1',x) in ['01','02','03']])
+    im_date1 = st.selectbox('Select date 1', options = [x for x in dates_str if re.sub('.*\\-([0-9]+)\\-.*','\\1',x) in ['01','02','03']])
+    im_array1 = cpf.get_image_near_point1('COPERNICUS/S2_SR', im_date1, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
     plt1 = cpf.plot_array_image(im_array1)
     st.pyplot(plt1)
     
 with stexp1col2:
-    im_date2 = st.selectbox('Select date 2', options = dates)
-    im_array2 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
-                                     im_date = im_date2,  
-                                     bands_rgb = ['B8','B4','B3'],
-                                     latitude = loc_pt_latlon[0].iloc[0], 
-                                     longitude = loc_pt_latlon[1].iloc[0], 
-                                     buffer_m = 200, 
-                            return_geopandas = False)
+    im_date2 = st.selectbox('Select date 2', options = dates_str)
+    im_array2 = cpf.get_image_near_point2('COPERNICUS/S2_SR', im_date2, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
     plt2 = cpf.plot_array_image(im_array2)
     st.pyplot(plt2)
     
+    
+
 with stexp1col3:
-    im_date3 = st.selectbox('Select date 3', options = dates)
-    im_array3 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
-                                     im_date = im_date3,  
-                                     bands_rgb = ['B8','B4','B3'],
-                                     latitude = loc_pt_latlon[0].iloc[0], 
-                                     longitude = loc_pt_latlon[1].iloc[0], 
-                                     buffer_m = 200, 
-                            return_geopandas = False)
+    im_date3 = st.selectbox('Select date 3', options = dates_str)
+    im_array3 = cpf.get_image_near_point3('COPERNICUS/S2_SR', im_date3, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
     plt3 = cpf.plot_array_image(im_array3)
     st.pyplot(plt3)
     
 with stexp1col4:
-    im_date4 = st.selectbox('Select date 4', options = dates)
-    im_array4 = cpf.get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
-                                     im_date = im_date4,  
-                                     bands_rgb = ['B8','B4','B3'],
-                                     latitude = loc_pt_latlon[0].iloc[0], 
-                                     longitude = loc_pt_latlon[1].iloc[0], 
-                                     buffer_m = 200, 
-                            return_geopandas = False)
+    im_date4 = st.selectbox('Select date 4', options = dates_str)
+    im_array4 = cpf.get_image_near_point4('COPERNICUS/S2_SR', im_date4, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
     plt4 = cpf.plot_array_image(im_array4)
     st.pyplot(plt4)
     
