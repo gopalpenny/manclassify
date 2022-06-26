@@ -34,7 +34,7 @@ def testfunc():
     
 def saveProjectVars(vars_dict, proj_path):
     vars_path = os.path.join(proj_path, "project_vars.json")
-    json.dump(vars_dict, open(vars_path, 'w'))
+    json.dump(vars_dict, open(vars_path, 'w', encoding = 'utf-8'), ensure_ascii=True, indent=4)
     
 def readProjectVars(proj_path):
     vars_path = os.path.join(proj_path, "project_vars.json")
@@ -53,6 +53,19 @@ def setProjectStartDate(year, month, day, proj_path):
     st.session_state['proj_vars']['classification_year_default'] = year
     st.session_state['proj_vars']['classification_start_month'] = month
     st.session_state['proj_vars']['classification_start_day'] = day
+    vars_dict = st.session_state['proj_vars']
+    saveProjectVars(vars_dict, proj_path)
+    
+
+def setProjectTimespan(start_date, end_date, proj_path):
+    st.session_state['proj_vars']['proj_start_date'] = start_date
+    st.session_state['proj_vars']['proj_end_date'] = end_date
+    
+    # add years to proj_vars
+    start_year = int(datetime.strftime(datetime.strptime(start_date, '%Y-%m-%d'), '%Y'))
+    end_year = int(datetime.strftime(datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months = 6), '%Y'))
+    st.session_state['proj_vars']['proj_years'] = list(range(start_year, end_year + 1))
+    
     vars_dict = st.session_state['proj_vars']
     saveProjectVars(vars_dict, proj_path)
     
@@ -572,28 +585,34 @@ def PlotTheme():
 
 
 
-def InitalizeClassDF(class_path, loc):
+def InitializeClassDF(class_path, loc):
     if os.path.exists(class_path):
         class_df = pd.read_csv(class_path)
     else:
         class_df = pd.DataFrame(loc).drop(['geometry'], axis = 1)
         class_df['Class'] = np.nan
         class_df['SubClass'] = np.nan
+        class_df['Year'] = st.session_state['proj_vars']['classification_year_default']
         class_df.to_csv(class_path, index = False)
         
     return class_df
 
-def UpdateClassDF(loc_id, Class, SubClass, class_path,  new_class, new_subclass):
+def UpdateClassDF(loc_id, Class, SubClass, class_path,  new_class, new_subclass, year):
+    loc_idx = st.session_state.class_df.loc_id == loc_id
+    year_idx = st.session_state.class_df.Year == year
+    idx = [x & y for (x, y) in zip(loc_idx, year_idx)]
     if Class == 'Input new':
-        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'Class'] = new_class
+        st.session_state.class_df.loc[idx, 'Class'] = new_class
     else:
-        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'Class'] = Class
+        st.session_state.class_df.loc[idx, 'Class'] = Class
         
         
     if SubClass == 'Input new':
-        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'] = new_subclass
+        st.session_state.class_df.loc[idx, 'SubClass'] = new_subclass
     else:
-        st.session_state.class_df.loc[st.session_state.class_df.loc_id == loc_id, 'SubClass'] = SubClass
+        st.session_state.class_df.loc[idx, 'SubClass'] = SubClass
+    
+    st.session_state.class_df.loc[idx, 'Year'] = year
         
     st.session_state.class_df.to_csv(class_path, index = False)
     

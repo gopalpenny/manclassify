@@ -22,7 +22,12 @@ import geopandas as gpd
 from itertools import compress
 import math
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from collections import OrderedDict
+
+
+import importlib
+importlib.reload(mf)
 
   
 gdrive_path = '/Users/gopal/Google Drive'
@@ -58,8 +63,6 @@ class_path = os.path.join(classification_dir_path, 'location_classification.csv'
     
     
 # %%
-import importlib
-importlib.reload(mf)
 #
 loc = gpd.read_file(sample_locations_path).set_crs(4326)
 ts_status_path = mf.TimeseriesStatusInit(proj_path)
@@ -67,11 +70,23 @@ ts_status_path = mf.TimeseriesStatusInit(proj_path)
 # def plotRegionPoints(region_status, sample_status, ts_status_path, allpts):
 ts_status = pd.read_csv(ts_status_path)[['loc_id','allcomplete']]
 
+
+# %%
+if 'classification_year' not in st.session_state:
+    st.session_state['classification_year'] = st.session_state['proj_vars']['classification_year_default']
+    
 # %%
 if 'class_df' not in st.session_state:
-    st.session_state['class_df'] = mf.InitalizeClassDF(class_path, loc)
+    st.session_state['class_df'] = mf.InitializeClassDF(class_path, loc)
 else:
-    st.session_state['class_df'] = mf.InitalizeClassDF(class_path, loc)
+    st.session_state['class_df'] = mf.InitializeClassDF(class_path, loc)
+    
+# %%
+    
+# if 'proj_vars' not in st.session_state:
+#     st.session_state['proj_vars'] = mf.readProjectVars(st.session_state['proj_path'])
+    
+    
 
     
 # %%
@@ -152,8 +167,9 @@ def prev_button():
         new_locid = class_df_filter.loc_id.max()
     st.session_state.loc_id = int(new_locid)
 
-def go_to_id(id_to_go):
+def go_to_id(id_to_go, year):
     st.session_state.loc_id = int(id_to_go)
+    st.session_state.classification_year = int(year)
     
 
 
@@ -164,14 +180,14 @@ with s1colA: #scol2 # side_layout[-1]:
     # loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
     
 
+# %% 
+# GO TO EXPANDER
+
 go_to_expander = st.sidebar.expander('Go to')
 
 with go_to_expander:
     st.text('go to year not working')
     s2colA, s2colB, s2colC = go_to_expander.columns([2,2,1])
-
-
-year_selected = 2019
 
 with s1colC:
     st.button('Next', on_click = next_button, args = ())
@@ -181,11 +197,15 @@ with s1colB:
 with s2colA:
     id_to_go = st.text_input("ID", value = str(loc_id))
 with s2colB:
-    year_to_go = st.text_input("Year", value = str(st.session_state['proj_vars']['classification_year_default']))
+    proj_years = st.session_state['proj_vars']['proj_years']
+    classification_year = st.session_state['classification_year']
+    idx_class_year = [i for i in range(len(proj_years)) if proj_years[i] == classification_year][0]
+    # year_to_go = st.text_input("Year", value = str(st.session_state['classification_year']))
+    year_to_go = st.selectbox("Year", options = proj_years, index = idx_class_year)
 with s2colC:
     st.text("")
     st.text("")
-    st.button('Go', on_click = go_to_id, args = (id_to_go, ))
+    st.button('Go', on_click = go_to_id, args = (id_to_go, year_to_go, ))
     
 # loc_id_num = loc_id
 # loc_id = 1
@@ -218,8 +238,17 @@ col1, col2 = st.columns(2)
 # %%
 
 plot_theme = p9.theme(panel_background = p9.element_rect())
-date_range = ['2019-06-01', '2020-06-01']
-date_start = ['2019-06-01']
+
+start_date_string_full = (str(st.session_state['classification_year']) + '-' + 
+                          st.session_state['proj_vars']['classification_start_month'] + '-' +
+                          str(st.session_state['proj_vars']['classification_start_day']))
+
+start_datetime = datetime.strptime(start_date_string_full, '%Y-%B-%d')
+end_datetime = start_datetime + relativedelta(years = 1)
+datetime_range = [start_datetime, end_datetime]
+date_range = [datetime.strftime(x, '%Y-%m-%d') for x in datetime_range]
+start_date = date_range[0]
+# date_range = ['2019-06-01', '2020-06-01']
 # p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 # p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
@@ -275,7 +304,7 @@ with scol2:
         
 with st.sidebar:
     st.button('Update classification', on_click = mf.UpdateClassDF,
-              args = (loc_id, ClassBox, SubClass, class_path, new_class, new_subclass,))
+              args = (loc_id, ClassBox, SubClass, class_path, new_class, new_subclass, st.session_state['classification_year'], ))
 
 
 

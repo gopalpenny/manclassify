@@ -114,7 +114,11 @@ if not st.session_state.ee_initialized:
 
 
 # pt_iloc_list = 0:5
-date_range = ['2014-01-01', '2022-04-30']
+try:
+    date_range = ([st.session_state['proj_vars']['proj_start_date'], 
+                   st.session_state['proj_vars']['proj_end_date']])
+except:
+    st.error('Need to set project timespan before proceeding')
 
 # %%
 
@@ -129,6 +133,7 @@ loc_selected_numpts = loc_notdownloaded.iloc[0:NumPts]
 # test = 0
 # test = st.button('Test', on_click = five, args = ())
 # st.write('test = ' + str(test))
+st.markdown("Date range to download date: `" + date_range[0] + '` to `' + date_range[1] + '`')
 st.button('Download points', on_click = mf.DownloadPoints, args = (loc_selected_numpts, date_range, timeseries_dir_path,ts_status,))
 
 # st.write(ts_status[0:10])

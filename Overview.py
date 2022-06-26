@@ -33,6 +33,9 @@ import appmodules.manclass as mf
 # from plotnine import *
 # import leafmap
 
+import importlib
+importlib.reload(mf)
+
 #%%
 
 
@@ -64,13 +67,6 @@ if 'samples_status' not in st.session_state:
 if 'proj_vars' not in st.session_state:
     st.session_state['proj_vars'] = mf.readProjectVars(st.session_state['proj_path'])
     
-# if 'classification_start' not in st.session_state:
-#     st.session_state['classification_start'] = {'year' : 2019,
-#                                                 'month' : st.session_state['proj_vars']['classification_start_month'],
-#                                                 'day' : st.session_state['proj_vars']['classification_start_day']}
-    
-
-
 if 'map_theme' not in st.session_state:
     st.session_state['map_theme'] = p9.theme(panel_background = p9.element_rect(fill = None),      
                      panel_border = p9.element_rect(),
@@ -101,22 +97,58 @@ st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_
 start_date_str = (st.session_state['proj_vars']['classification_start_month'] + ' ' +
                   str(st.session_state['proj_vars']['classification_start_day']) + ', ' +
                   str(st.session_state['proj_vars']['classification_year_default']))
+
+
+st.markdown("""### Project timespan
+            
+Timeseries will be downloaded for dates contained within this timespan.
+Pixels can only be classified for years within this timespan. If the end
+date is less than six months into the year, that year will be excluded.
+Be careful changing this timespan if you've already started downloading timeseries
+data.
+            """)
+
+m0cols = st.columns([1,1,1])
+with m0cols[0]:
+    prior_start_date = datetime.strptime(st.session_state['proj_vars']['proj_start_date'] , '%Y-%m-%d')
+    project_start_datetime = st.date_input('Start date', 
+                                           value = prior_start_date)
+    project_start_date = datetime.strftime(project_start_datetime, "%Y-%m-%d")
+with m0cols[1]:
+    prior_end_date = datetime.strptime(st.session_state['proj_vars']['proj_end_date'], '%Y-%m-%d')
+    project_end_datetime = st.date_input('End date',
+                                         value = prior_end_date)
+    project_end_date = datetime.strftime(project_end_datetime, "%Y-%m-%d")
+with m0cols[2]:
+    st.markdown('#')
+    st.button('Set project timespan (NOT WORKING)',
+               on_click = mf.setProjectTimespan, 
+               args = (project_start_date, project_end_date, st.session_state['proj_path'], ))
+
+# st.number_input()
+
 st.markdown('### Start date for classification year (current: )', )
-m1 = st.columns([1, 1, 1, 2])
+m1cols = st.columns([1, 1, 1, 2])
 
 
-with m1[0]:
-    year_default = st.number_input("Default year", min_value = 0, max_value = 3000, value = 2019)
+with m1cols[0]:
+    proj_years = st.session_state['proj_vars']['proj_years']
+    default_year = st.session_state['proj_vars']['classification_year_default']
+    idx_default_year = [i for i in range(len(proj_years)) if proj_years[i] == default_year][0]
+    year_default = st.selectbox("Default year", options = proj_years, 
+                                    index = idx_default_year)
     
-with m1[1]:
+with m1cols[1]:
     year_start_month = [datetime.strftime(datetime.strptime('2000-' + str(x) + '-01','%Y-%m-%d'), '%B') for x in range(1,13)]
-    start_month = st.selectbox("Month", options = year_start_month)
-with m1[2]:
-    start_day = st.number_input("Day", min_value = 1, max_value = 31, value = 1)
+    current_month = st.session_state['proj_vars']['classification_start_month']
+    idx_month = [i for i in range(len(year_start_month)) if year_start_month[i] == current_month][0]
+    start_month = st.selectbox("Month", options = year_start_month, index = idx_month)
+with m1cols[2]:
+    start_day = st.number_input("Day", min_value = 1, max_value = 31, value = st.session_state['proj_vars']['classification_start_day'])
 # with m1[2]:
 #     st.markdown('####')
 #     st.markdown('#### Start day for classification year')
-with m1[3]:
+with m1cols[3]:
     st.markdown('#')
     st.button('Set start date for classification year', 
               on_click = mf.setProjectStartDate, 
