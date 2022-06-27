@@ -17,22 +17,30 @@ import ee
 import sys
 import plotnine as p9
 import re
+import numpy as np
 from streamlit_folium import st_folium
 import folium
-import appmodules.manclass as mf
+# import appmodules.manclass as mf
+import appmodules.SamplePageFunctions as spf
 
 gdrive_path = '/Users/gopal/Google Drive'
 gdrive_ml_path = os.path.join(gdrive_path, '_Research/Research projects/ML')
 sys.path.append(gdrive_ml_path)
 from geemod import rs
 
+
+import importlib
+importlib.reload(spf)
+
 # %%
 # region_path = os.path.join(st.session_state.proj_path,"region")
 sample_locations_dir_path = os.path.join(st.session_state.proj_path,st.session_state.proj_name + "_sample_locations")
+random_locations_path = os.path.join(sample_locations_dir_path, "random_locations.shp")
 sample_locations_path = os.path.join(sample_locations_dir_path, "sample_locations.shp")
 region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
 
 region_status = os.path.exists(region_shp_path)
+random_status = os.path.exists(random_locations_path)
 sample_status = os.path.exists(sample_locations_path)
 
 if not region_status:
@@ -42,10 +50,10 @@ else:
     p_map = (p9.ggplot() + st.session_state.map_theme +
              p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black"))
     
-    if sample_status:
-        sample_locations_shp = gpd.read_file(sample_locations_path)
+    if random_status:
+        random_locations_shp = gpd.read_file(random_locations_path)
         p_map = (p_map + 
-                 p9.geom_map(data = sample_locations_shp, mapping = p9.aes(color = 'loc_id')))
+                 p9.geom_map(data = random_locations_shp, mapping = p9.aes(color = 'loc_id')))
 
 
 # %% Layout
@@ -63,7 +71,7 @@ with main_columns[0]:
 # loc_pt = allpts[allpts.loc_id == loc_id]
 
 
-loc = gpd.read_file(sample_locations_path).set_crs(4326)
+loc = gpd.read_file(random_locations_path).set_crs(4326)
 
 
 st_session_state = {}
@@ -146,7 +154,7 @@ adj_y_m = 0
 adj_x_m = 30
 
 loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
-loc_pt_latlon_shifted = mf.shift_points_m(loc_pt, adj_x_m, adj_y_m)
+loc_pt_latlon_shifted = spf.shift_points_m(loc_pt, adj_x_m, adj_y_m)
 
 
 # loc_pt_latlon = [13, 77]
@@ -175,9 +183,11 @@ with main_columns[1]:
 
 path_to_shp_import = st.text_input('Path to shapefile',
               value = '/Users/gopal/Projects/ArkavathyTanksProject/arkavathytanks/spatial/CauveryBasin/Cauvery_boundary5.shp')
-st.button('Import shapefile', on_click = mf.ImportShapefile, args = (sample_locations_dir_path, path_to_shp_import,))
+st.button('Import shapefile', on_click = spf.ImportShapefile, args = (sample_locations_dir_path, path_to_shp_import,))
 if region_status: st.text('Already done (' + re.sub(st.session_state.app_path,'',region_shp_path) + ')')
-st.button('Generate sample locations', on_click = mf.GenerateSamples, args = (st.session_state.app_path,st.session_state.proj_name,))
+st.button('Generate random locations', on_click = spf.GenerateRandomPts, args = (st.session_state.app_path,st.session_state.proj_name,))
+if random_status: st.text('Already done (' + re.sub(st.session_state.app_path,'',random_locations_path) + ')')
+st.button('Begin setting sample locations', on_click = spf.InitiateSampleLocations, args = (st.session_state.app_path,st.session_state.proj_name,))
 if sample_status: st.text('Already done (' + re.sub(st.session_state.app_path,'',sample_locations_path) + ')')
 
 # gpd.read_file()
