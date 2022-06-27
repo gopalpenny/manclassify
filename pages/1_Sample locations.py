@@ -8,7 +8,7 @@ Created on Sun Jun 12 15:03:28 2022
 
 
 import streamlit as st
-st.set_page_config(page_title="Sample region", layout="wide", page_icon="🌍")
+st.set_page_config(page_title="Sample region", layout="wide", page_icon="🌏")
 import pandas as pd
 import geopandas as gpd
 import geemap

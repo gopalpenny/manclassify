@@ -9,7 +9,7 @@ Created on Sun Jun 12 20:42:12 2022
 
 
 import streamlit as st
-st.set_page_config(page_title="Grab sample data", layout="wide", page_icon="🌍")
+st.set_page_config(page_title="Grab sample data", layout="wide", page_icon="🌏")
 import pandas as pd
 # import numpy as np
 import geopandas as gpd

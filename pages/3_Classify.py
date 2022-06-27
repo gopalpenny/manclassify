@@ -7,7 +7,7 @@ Created on Fri Jun 10 16:40:03 2022
 """
 
 import streamlit as st
-st.set_page_config(page_title="Classify", layout="wide", page_icon="🌍")
+st.set_page_config(page_title="Classify", layout="wide", page_icon="🌏")
 import pandas as pd
 import numpy as np
 import os
@@ -445,13 +445,31 @@ start_date = datetime.strptime(date_range[0], '%Y-%m-%d')
 end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
 
 # p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
-st_snapshots = st.expander('View snapsnots')
-st_snapshots_dates_cols = st_snapshots.columns([1,1,1,1,1])
-snapshot_dates_cols = st_snapshots_dates_cols[0:3]
+# st_snapshots = st.expander('View snapsnots')
+# st.markdown("""---""")
+st.markdown("""###""")
+break_col_width = 0.15
+st_snapshots_title_cols = st.columns([3,break_col_width,2])
+
+
+def update_spectra_range():
+    st.session_state['spectrum_range_1'] = st.session_state['spectrum_r1']
+    st.session_state['spectrum_range_2'] = st.session_state['spectrum_r2']
+
+with st_snapshots_title_cols[0]:
+    st.markdown('#### Snapshots')
+with st_snapshots_title_cols[2]:
+    st.markdown('#### Reflectance spectra')
+# with st_snapshots_title_cols[2]:
+#     st.text('')
+#     st.button('Update', key = 'go_to_spectra', on_click = update_spectra_range, )
+    
+st_snapshots_dates_cols = st.columns([1,1,1,break_col_width,0.8,0.8,0.35])
+# snapshot_dates_cols = st_snapshots_dates_cols[0:3]
 
 tsS2 = mf.GenS2data(loc_id, timeseries_dir_path, date_range).query('cloudmask == 0')
-tsS2 = tsS2[start_date <= tsS2['datetime']]
-tsS2 = tsS2[tsS2['datetime'] <= end_date]
+# tsS2 = tsS2[start_date <= tsS2['datetime']]
+# tsS2 = tsS2[tsS2['datetime'] <= end_date]
 
 # dates_datetime = tsS2[datetime.strftime(tsS2['datetime'],'%Y'),'datetime']
 dates_datetime = [x.to_pydatetime() for x in list(OrderedDict.fromkeys(tsS2['datetime']))]
@@ -465,19 +483,39 @@ month_seq = [start_date + relativedelta(months = x) for x in np.arange(length_ou
 # st.write(month_seq)
 buffer_px = 10
 
+
+# def getNearestDatetime(all_datetimes, select_datetime):
+#     date_diffs = np.abs([x - select_datetime for x in all_datetimes])
+    
+#     st.write(np.min(date_diffs))
+#     st.write(list(date_diffs))
+#     nearest_datetime = [all_datetimes[i] for i in range(len(date_diffs)) if np.min(date_diffs) == all_datetimes[i]]
+#     # nearest_date = datetime.strftime(im_datetime1, '%Y-%m-%d')
+#     st.write(nearest_datetime)
+    
+#     return nearest_datetime
+
 def getDatesInRange(all_datetimes, start_date_inclusive, end_date_exclusive):
     dates_str = [datetime.strftime(x, '%Y-%m-%d') for x in dates_datetime if (start_date_inclusive <= x < end_date_exclusive)]
+    if len(dates_str) == 0:
+        dates_str = ["No dates in range"]
+        # select_datetime = month_seq[0] + (month_seq[1] - month_seq[0])/2
+        # datetime_nearest = getNearestDatetime(all_datetimes, select_datetime)
+        # dates_str = datetime.strptime(datetime_nearest, '%Y-%m-%d')
+                                         
     return dates_str
 
-with st_snapshots_dates_cols[0]:
-    # st.write(loc_pt_latlon[1].iloc[0])
-    # im_date1 = st.selectbox('Select date 1', options = [dates_str[i] for i in range(len(dates)) if re.sub('.*\\-([0-9]+)\\-.*','\\1',x) in ['01','02','03']])
     
-    # st.write(month_seq)
-    # st.write(type(month_seq))
-    # st.write(dates_datetime[0])
+
+with st_snapshots_dates_cols[0]:
     dates_str_1 = getDatesInRange(dates_datetime, month_seq[0], month_seq[1])
     im_date1 = st.selectbox('Select date 1', options = dates_str_1)
+    # # Select date via slider
+    # init_value = month_seq[0] + (month_seq[1] - month_seq[0])/2
+    # im_date1_slider = st.slider('Select date 1', min_value = month_seq[0], max_value = month_seq[1], value = init_value)
+    # im_date1_diffs = np.abs(tsS2['datetime'] - im_date1_slider)
+    # im_datetime1 = [tsS2['datetime'].iloc[i] for i in range(len(im_date1_diffs)) if np.min(im_date1_diffs) == im_date1_diffs.iloc[i]][0]
+    # im_date1 = datetime.strftime(im_datetime1, '%Y-%m-%d')
     
 with st_snapshots_dates_cols[1]:
     dates_str_2 = getDatesInRange(dates_datetime, month_seq[1], month_seq[2])
@@ -489,18 +527,13 @@ with st_snapshots_dates_cols[2]:
     
 snapshot_dates = [im_date1, im_date2, im_date3]
 
-spectrum_slider_date_col = st_snapshots_dates_cols[3:5]
+spectrum_slider_date_col = st_snapshots_dates_cols[4:7]
 # spectrum_slider_col = spectrum_col.columns([1,1])
 
 if 'spectrum_range_1' not in st.session_state:
     st.session_state['spectrum_range_1'] = (month_seq[1], month_seq[2])
 if 'spectrum_range_2' not in st.session_state:
     st.session_state['spectrum_range_2'] = (month_seq[2], end_date)
-    
-    
-def update_spectra_range():
-    st.session_state['spectrum_range_1'] = st.session_state['spectrum_r1']
-    st.session_state['spectrum_range_2'] = st.session_state['spectrum_r2']
     
 def bound_val(val, bounds):
     if val < bounds[0]:
@@ -520,16 +553,22 @@ def outside_bounds(spec_range_tuple, datetime_range):
     return outside
 
 with spectrum_slider_date_col[0]:
-    if outside_bounds(st.session_state['spectrum_range_1'], datetime_range):
-        st.session_state['spectrum_range_1'] = (month_seq[1], month_seq[2])
-    spectrum_range_1 = st.slider('Spectrum range 1', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_1'], on_change = update_spectra_range, key = 'spectrum_r1')
+    init_range1 = st.session_state['spectrum_range_1']
+    if outside_bounds(init_range1, datetime_range):
+        init_range1 = (month_seq[1], month_seq[2])
+    spectrum_range_1 = st.slider('Spectrum date range 1', min_value = start_date, max_value = end_date, value = init_range1, key = 'spectrum_r1')
 with spectrum_slider_date_col[1]:
-    if outside_bounds(st.session_state['spectrum_range_2'], datetime_range):
-        st.session_state['spectrum_range_2'] = (month_seq[2], end_date)
-    spectrum_range_2 = st.slider('Spectrum range 2', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_2'], on_change = update_spectra_range, key = 'spectrum_r2')
+    init_range2 = st.session_state['spectrum_range_2']
+    if outside_bounds(init_range2, datetime_range):
+        init_range2 = (month_seq[2], month_seq[3])
+    spectrum_range_2 = st.slider('Spectrum date range 2', min_value = start_date, max_value = end_date, value = init_range2, key = 'spectrum_r2')
+    
+with spectrum_slider_date_col[2]:
+    st.text('')
+    st.text('')
+    st.button('Update', key = 'go_to_spectra', on_click = update_spectra_range, )
 
-
-spectra_list = [spectrum_range_1, spectrum_range_2]
+spectra_list = [st.session_state['spectrum_range_1'], st.session_state['spectrum_range_2']]
 p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_dates, spectra_list) 
 
 # %%
@@ -543,27 +582,37 @@ p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range, month_se
 with col1:
     st.pyplot(p9.ggplot.draw(p_sentinel))
 
-st_snapshots_cols = st_snapshots.columns([1,1,1,2])
+# st_snapshots_cols = st_snapshots.columns([1,1,1,2])
+st_snapshots_cols = st.columns([1,1,1,break_col_width,2])
     
 with st_snapshots_cols[0]:
-    im_array1 = cpf.get_image_near_point1('COPERNICUS/S2_SR', im_date1, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
-    plt1 = cpf.plot_array_image(im_array1)
-    st.pyplot(plt1)
+    if im_date1 != 'No dates in range':
+        im_array1 = cpf.get_image_near_point1('COPERNICUS/S2_SR', im_date1, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
+        plt1 = cpf.plot_array_image(im_array1)
+        st.pyplot(plt1)
+    else:
+        st.text('No dates in range')
     
 
 with st_snapshots_cols[1]:
-    im_array2 = cpf.get_image_near_point2('COPERNICUS/S2_SR', im_date2, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
-    plt2 = cpf.plot_array_image(im_array2)
-    st.pyplot(plt2)
+    if im_date2 != 'No dates in range':
+        im_array2 = cpf.get_image_near_point2('COPERNICUS/S2_SR', im_date2, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
+        plt2 = cpf.plot_array_image(im_array2)
+        st.pyplot(plt2)
+    else:
+        st.text('No dates in range')
     
 
 with st_snapshots_cols[2]:
-    im_array3 = cpf.get_image_near_point3('COPERNICUS/S2_SR', im_date3, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
-    plt3 = cpf.plot_array_image(im_array3)
-    st.pyplot(plt3)
+    if im_date3 != 'No dates in range':
+        im_array3 = cpf.get_image_near_point3('COPERNICUS/S2_SR', im_date3, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
+        plt3 = cpf.plot_array_image(im_array3)
+        st.pyplot(plt3)
+    else:
+        st.text('No dates in range')
     
     
-with st_snapshots_cols[3]:
+with st_snapshots_cols[4]:
     p_spectra = mf.plotSpectra(loc_id, timeseries_dir_path, date_range, spectra_list)
     st.pyplot(p9.ggplot.draw(p_spectra))
     

@@ -22,7 +22,7 @@ Created on Sun Jun 12 14:54:31 2022
 #   c. If sample points have data, use a different shape
 
 import streamlit as st
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Overview", layout="wide", page_icon="🌏")
 import pandas as pd
 # import numpy as np
 import os
@@ -75,12 +75,15 @@ if 'map_theme' not in st.session_state:
                      plot_background=p9.element_rect(fill = None))
     
 
-if st.checkbox("Display Session Variables"):
-    st.markdown('* st.session_state.app_path: ' + st.session_state.app_path +
-                '\n* st.session_state.proj_name: ' + st.session_state.proj_name +
-                '\n* st.session_state.proj_path: ' + st.session_state.proj_path)
+# if st.checkbox("Display Session Variables"):
+#     st.markdown('* st.session_state.app_path: ' + st.session_state.app_path +
+#                 '\n* st.session_state.proj_name: ' + st.session_state.proj_name +
+#                 '\n* st.session_state.proj_path: ' + st.session_state.proj_path)
 
-st.session_state.app_path = st.text_input("Application directory (in Google Drive)", value = default_app_path)
+
+st.title("Dashboard")
+
+st.session_state.app_path = st.text_input("Application directory (must be in Google Drive and synced locally)", value = default_app_path)
 
 projects = os.listdir(st.session_state.app_path)
 
@@ -88,7 +91,6 @@ projects = os.listdir(st.session_state.app_path)
 # os.walk(default_app_path)
 # %%
 
-st.title("Dashboard")
 
 st.session_state.proj_name = st.selectbox("Select a project", options = tuple(projects))
 st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj_name)
