@@ -512,16 +512,17 @@ def GenS2data(loc_id, timeseries_dir_path, date_range):
     s2 = s2.assign(NDVI = lambda df: (df.B8 - df.B4)/(df.B8 + df.B4))
     
     
-    s2_long = s2.melt(id_vars = ['datetime','cloudmask'], value_vars = 'NDVI')
+    s2_long = s2.melt(id_vars = ['datetime','cloudmask'], value_vars = ['B8','B4','B3','B2','NDVI'])
     
     return s2_long
     
     # # s2['backscatter'] = (s2['VV']**2 + s2['VH']**2) ** (1/2)
 
-def plotTimeseries(loc_id, timeseries_dir_path, date_range):
+def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_dates, spectra_list):
     
     s1 = GenS1data(loc_id, timeseries_dir_path, date_range)
     s2 = GenS2data(loc_id, timeseries_dir_path, date_range)
+    s2 = s2[s2['variable'] == 'NDVI']
     
     datetime_range = [datetime.strptime(x, '%Y-%m-%d') for x in date_range]
     
@@ -532,30 +533,151 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range):
     pre_date = start_date - relativedelta(months = 6)
     post_date = end_date + relativedelta(months = 6)
     
-    month_increment = 4
-    length_out = 4
-    month_seq = pd.DataFrame({'datetime':[start_date + relativedelta(months = x) for x in np.arange(length_out) * month_increment]})
+    month_seq_df = pd.DataFrame({'datetime':month_seq})
 
     line_vars = ['NDVI']
     smooth_vars = ['backscatter']
     sentinel_cloudfree = sentinel.query('cloudmask != 1')
+    sentinel_cloudfree['date'] = [datetime.strftime(x, '%Y-%m-%d') for x in sentinel_cloudfree['datetime']]
     
-    p_sentinel = (p9.ggplot(data = sentinel_cloudfree, mapping = p9.aes('datetime', 'value')) + 
-      p9.geom_vline(data = month_seq, mapping = p9.aes(xintercept = 'datetime'), alpha = 0.3) +
-      p9.annotate('rect',xmin = pre_date, xmax = start_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
-      p9.annotate('rect',xmin = end_date, xmax = post_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
-      # p9.geom_rect(mapping = p9.aes(xmin = pre_date, xmax = post_date, ymin = -np.Inf, ymax = np.Inf), fill = 'black', alpha = 0.3) +
-      p9.geom_point() + 
-      p9.geom_line(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(line_vars)]) + 
-      p9.geom_smooth(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(smooth_vars)], span = 0.25) + 
-      p9.facet_wrap('variable',scales = 'free_y',ncol = 1) +
-      # p9.xlim()+
-      # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
-      p9.scale_x_datetime(limits = [pre_date, post_date], 
-                          date_labels = '%Y-%b', date_breaks = '1 year') +
-      PlotTheme() + p9.theme(axis_title_x = p9.element_blank()))
+    # snapshots
+    snapshot_datetimes = pd.DataFrame({
+        'date' : snapshot_dates,
+        'snapshot' : [str(x) for x in list(range(len(snapshot_dates)))]})
+    sentinel_snapshots = sentinel_cloudfree.merge(snapshot_datetimes, how = 'inner', on = 'date')
+
+    # date range for spectra
+    spectral_range = pd.DataFrame(columns = ['id','start_date', 'end_date', 'variable'])
+    for i in range(len(spectra_list)):
+        row_list = [i] + list(spectra_list[i]) + [line_vars[0]]
+        spectral_range.loc[i] = row_list
+        
+        
+    var_min = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.min()
+    print(var_min)
+    # .value.min()
+    var_max = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.max()
+    # print('var_min')
+    # print(type(var_min))
+    # print(type(spectral_range.id))
+    spectral_range['yval'] = var_min + spectral_range.id * (var_max - var_min) * 0.05
+        
+    print(spectral_range)
+    # spectral_range
+    # print(sentinel_cloudfree.variable[0])
+    
+    p_sentinel = (
+        p9.ggplot(data = sentinel_cloudfree, mapping = p9.aes('datetime', 'value')) + 
+        p9.annotate('rect',xmin = start_date, xmax = end_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'white', color = 'black', alpha = 1) +
+        p9.geom_segment(data = spectral_range, mapping = p9.aes(x = 'start_date', xend = 'end_date', y = 'yval', yend = 'yval',color = 'id'), size = 2) +
+        p9.geom_vline(data = month_seq_df, mapping = p9.aes(xintercept = 'datetime'), color = 'black', alpha = 0.5) +
+        # p9.annotate('rect',xmin = end_date, xmax = post_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
+        p9.geom_point() + 
+        p9.geom_line(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(line_vars)]) + 
+        p9.geom_point(data = sentinel_snapshots, mapping=p9.aes(fill = 'snapshot'), size = 4) + 
+        p9.geom_smooth(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(smooth_vars)], span = 0.25) + 
+        p9.facet_wrap('variable', scales = 'free_y',ncol = 1) +
+        # p9.xlim()+
+        # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
+        p9.scale_x_datetime(limits = [pre_date, post_date], 
+                            date_labels = '%Y-%b', date_breaks = '1 year') +
+        PlotTheme() + p9.theme(axis_title_x = p9.element_blank(),
+                               panel_background= p9.element_rect(fill = 'gray', color = None),
+                               # panel_border= p9.element_rect(fill = 'gray'),
+                               legend_position = 'none'))
     
     return p_sentinel
+
+def plotSpectra(loc_id, timeseries_dir_path, date_range, spectra_list):
+    
+    s1 = GenS1data(loc_id, timeseries_dir_path, date_range)
+    s2 = GenS2data(loc_id, timeseries_dir_path, date_range)
+    sentinel = pd.concat([s1, s2]).query('cloudmask != 1')
+    # sentinel['date'] = [datetime.strftime(x, '%Y-%m-%d') for x in sentinel['datetime']]
+    
+    s2_bands = pd.DataFrame({
+        'variable' : ['B2','B3','B4','B8','backscatter','NDVI'],
+        'freq_nm': [495, 560, 660, 835, -1, -1]
+        })
+    
+    sent_range_all = pd.DataFrame(columns = list(sentinel.columns) + ['rangenum'])
+    for i in range(len(spectra_list)):
+        range_prep = sentinel.loc[(spectra_list[i][0] <= sentinel['datetime']) & (sentinel['datetime'] <= spectra_list[i][1])]
+        range_prep['rangenum'] = i
+        sent_range_all = sent_range_all.append(range_prep)
+        
+    sent_range_all = sent_range_all.merge(s2_bands, how = 'left', on = 'variable')
+    
+    sent_range = (sent_range_all
+      .groupby(['variable','rangenum','freq_nm'], as_index = False)
+      .agg({'value' : 'mean'}))
+    
+    sent_range['Reflectance'] = sent_range['value'] / 1e4
+    
+    print(sent_range)
+    p_spectra = (
+        p9.ggplot(data = sent_range[sent_range['freq_nm'] > 0], mapping = p9.aes(x = 'freq_nm', y = 'Reflectance', color = 'rangenum')) +
+        p9.geom_point(size = 4) + p9.geom_line() + 
+        p9.xlab('Frequency, nm') +
+        p9.expand_limits(y = (0, 0.2)) +
+        p9.scale_color_manual(['purple','yellow']) +
+        PlotTheme() +
+        p9.theme(legend_position = 'none',
+                 figure_size = (4.5,2)))
+    
+    return p_spectra
+    
+    # line_vars = ['NDVI']
+    # bar_vars = ['backscatter']
+    # sentinel_cloudfree = sentinel.query('cloudmask != 1')
+    
+    # # snapshots
+    # snapshot_datetimes = pd.DataFrame({
+    #     'date' : snapshot_dates,
+    #     'snapshot' : [str(x) for x in list(range(len(snapshot_dates)))]})
+    # sentinel_snapshots = sentinel_cloudfree.merge(snapshot_datetimes, how = 'inner', on = 'date')
+    
+    # # date range for spectra
+    # spectral_range = pd.DataFrame(columns = ['id','start_date', 'end_date', 'variable'])
+    # for i in range(len(spectra_list)):
+    #     row_list = [i] + list(spectra_list[i]) + [line_vars[0]]
+    #     spectral_range.loc[i] = row_list
+        
+        
+    # var_min = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.min()
+    # print(var_min)
+    # # .value.min()
+    # var_max = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.max()
+    # # print('var_min')
+    # # print(type(var_min))
+    # # print(type(spectral_range.id))
+    # spectral_range['yval'] = var_min + spectral_range.id * (var_max - var_min) * 0.05
+        
+    # print(spectral_range)
+    # # spectral_range
+    # # print(sentinel_cloudfree.variable[0])
+    
+    # p_sentinel = (
+    #     p9.ggplot(data = sentinel_cloudfree, mapping = p9.aes('datetime', 'value')) + 
+    #     p9.annotate('rect',xmin = start_date, xmax = end_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'white', color = 'black', alpha = 1) +
+    #     p9.geom_segment(data = spectral_range, mapping = p9.aes(x = 'start_date', xend = 'end_date', y = 'yval', yend = 'yval',color = 'id'), size = 2) +
+    #     p9.geom_vline(data = month_seq_df, mapping = p9.aes(xintercept = 'datetime'), color = 'black', alpha = 0.5) +
+    #     # p9.annotate('rect',xmin = end_date, xmax = post_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
+    #     p9.geom_point() + 
+    #     p9.geom_line(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(line_vars)]) + 
+    #     p9.geom_point(data = sentinel_snapshots, mapping=p9.aes(fill = 'snapshot'), size = 4) + 
+    #     p9.geom_smooth(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(smooth_vars)], span = 0.25) + 
+    #     p9.facet_wrap('variable', scales = 'free_y',ncol = 1) +
+    #     # p9.xlim()+
+    #     # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
+    #     p9.scale_x_datetime(limits = [pre_date, post_date], 
+    #                         date_labels = '%Y-%b', date_breaks = '1 year') +
+    #     PlotTheme() + p9.theme(axis_title_x = p9.element_blank(),
+    #                            panel_background= p9.element_rect(fill = 'gray', color = None),
+    #                            # panel_border= p9.element_rect(fill = 'gray'),
+    #                            legend_position = 'none'))
+    
+    # return p_sentinel
 
 
 def MapTheme():

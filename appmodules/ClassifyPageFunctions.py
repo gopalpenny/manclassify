@@ -136,37 +136,6 @@ def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longit
     return return_val
 
 
-# %% 
-# Cached funtions for each date to more quickly disply images on reload
-
-@st.cache
-def get_image_near_point1(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
-    im_array = get_image_near_point(
-        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
-        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
-    return im_array
-
-@st.cache
-def get_image_near_point2(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
-    im_array = get_image_near_point(
-        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
-        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
-    return im_array
-
-@st.cache
-def get_image_near_point3(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
-    im_array = get_image_near_point(
-        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
-        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
-    return im_array
-
-
-@st.cache
-def get_image_near_point4(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
-    im_array = get_image_near_point(
-        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
-        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
-    return im_array
 
 # @st.cache
 def plot_array_image(im_array):
@@ -188,3 +157,35 @@ def plot_array_image(im_array):
     plt.plot(xcenter + arrow_spacing, ycenter, marker = '<', color = 'white')
     plt.plot(xcenter - arrow_spacing, ycenter,marker = '>', color = 'white')
     return plt
+
+# %% 
+# Cached funtions for each date to more quickly disply images on reload
+
+@st.cache(suppress_st_warning=True)
+def get_image_near_point1(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array
+
+@st.cache(suppress_st_warning=True)
+def get_image_near_point2(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array
+
+@st.cache(suppress_st_warning=True)
+def get_image_near_point3(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array
+
+
+@st.cache(suppress_st_warning=True)
+def get_image_near_point4(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
+    im_array = get_image_near_point(
+        'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
+        loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
+    return im_array

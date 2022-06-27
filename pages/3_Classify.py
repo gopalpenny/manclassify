@@ -373,11 +373,6 @@ start_date = date_range[0]
 # date_range = ['2019-06-01', '2020-06-01']
 # p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 # p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
-p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range)
-    
-with col1:
-    st.pyplot(p9.ggplot.draw(p_sentinel))
-    # st.pyplot(p9.ggplot.draw(p_s2))
     
 with col2:
     # st.write(m.to_streamlit())
@@ -451,44 +446,101 @@ end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
 
 # p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
 st_snapshots = st.expander('View snapsnots')
-stexp1col1, stexp1col2, stexp1col3, stexp1col4 = st_snapshots.columns([1,1,1,1])
+st_snapshots_dates_cols = st_snapshots.columns([1,1,1,1,1])
+snapshot_dates_cols = st_snapshots_dates_cols[0:3]
+
 tsS2 = mf.GenS2data(loc_id, timeseries_dir_path, date_range).query('cloudmask == 0')
 tsS2 = tsS2[start_date <= tsS2['datetime']]
 tsS2 = tsS2[tsS2['datetime'] <= end_date]
 
 # dates_datetime = tsS2[datetime.strftime(tsS2['datetime'],'%Y'),'datetime']
-dates_datetime = list(OrderedDict.fromkeys(tsS2['datetime']))
+dates_datetime = [x.to_pydatetime() for x in list(OrderedDict.fromkeys(tsS2['datetime']))]
 dates_str = [datetime.strftime(x, '%Y-%m-%d') for x in dates_datetime]
 
+
+month_increment = 4
+length_out = 4
+month_seq = [start_date + relativedelta(months = x) for x in np.arange(length_out) * month_increment]
+
+# st.write(month_seq)
 buffer_px = 10
 
-with stexp1col1:
+def getDatesInRange(all_datetimes, start_date_inclusive, end_date_exclusive):
+    dates_str = [datetime.strftime(x, '%Y-%m-%d') for x in dates_datetime if (start_date_inclusive <= x < end_date_exclusive)]
+    return dates_str
+
+with st_snapshots_dates_cols[0]:
     # st.write(loc_pt_latlon[1].iloc[0])
     # im_date1 = st.selectbox('Select date 1', options = [dates_str[i] for i in range(len(dates)) if re.sub('.*\\-([0-9]+)\\-.*','\\1',x) in ['01','02','03']])
-    im_date1 = st.selectbox('Select date 1', options = [x for x in dates_str if re.sub('.*\\-([0-9]+)\\-.*','\\1',x) in ['01','02','03']])
+    
+    # st.write(month_seq)
+    # st.write(type(month_seq))
+    # st.write(dates_datetime[0])
+    dates_str_1 = getDatesInRange(dates_datetime, month_seq[0], month_seq[1])
+    im_date1 = st.selectbox('Select date 1', options = dates_str_1)
+    
+with st_snapshots_dates_cols[1]:
+    dates_str_2 = getDatesInRange(dates_datetime, month_seq[1], month_seq[2])
+    im_date2 = st.selectbox('Select date 2', options = dates_str_2)
+    
+with st_snapshots_dates_cols[2]:
+    dates_str_3 = getDatesInRange(dates_datetime, month_seq[2], month_seq[3])
+    im_date3 = st.selectbox('Select date 3', options = dates_str_3)
+    
+snapshot_dates = [im_date1, im_date2, im_date3]
+
+spectrum_slider_date_col = st_snapshots_dates_cols[3:5]
+# spectrum_slider_col = spectrum_col.columns([1,1])
+
+with spectrum_slider_date_col[0]:
+    spectrum_range_1 = st.slider('Range 1', min_value = start_date, max_value = end_date, value = (start_date, month_seq[2]))
+with spectrum_slider_date_col[1]:
+    spectrum_range_2 = st.slider('Range 2', min_value = start_date, max_value = end_date, value = (month_seq[1], end_date))
+
+
+spectra_list = [spectrum_range_1, spectrum_range_2]
+p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_dates, spectra_list) 
+
+# %%
+
+
+
+
+# %%
+
+    
+with col1:
+    st.pyplot(p9.ggplot.draw(p_sentinel))
+
+st_snapshots_cols = st_snapshots.columns([1,1,1,2])
+    
+with st_snapshots_cols[0]:
     im_array1 = cpf.get_image_near_point1('COPERNICUS/S2_SR', im_date1, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
     plt1 = cpf.plot_array_image(im_array1)
     st.pyplot(plt1)
     
-with stexp1col2:
-    im_date2 = st.selectbox('Select date 2', options = dates_str)
+
+with st_snapshots_cols[1]:
     im_array2 = cpf.get_image_near_point2('COPERNICUS/S2_SR', im_date2, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
     plt2 = cpf.plot_array_image(im_array2)
     st.pyplot(plt2)
     
-    
 
-with stexp1col3:
-    im_date3 = st.selectbox('Select date 3', options = dates_str)
+with st_snapshots_cols[2]:
     im_array3 = cpf.get_image_near_point3('COPERNICUS/S2_SR', im_date3, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
     plt3 = cpf.plot_array_image(im_array3)
     st.pyplot(plt3)
     
-with stexp1col4:
-    im_date4 = st.selectbox('Select date 4', options = dates_str)
-    im_array4 = cpf.get_image_near_point4('COPERNICUS/S2_SR', im_date4, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
-    plt4 = cpf.plot_array_image(im_array4)
-    st.pyplot(plt4)
+    
+with st_snapshots_cols[3]:
+    p_spectra = mf.plotSpectra(loc_id, timeseries_dir_path, date_range, spectra_list)
+    st.pyplot(p9.ggplot.draw(p_spectra))
+    
+# with stexp1col4:
+#     im_date4 = st.selectbox('Select date 4', options = dates_str)
+#     im_array4 = cpf.get_image_near_point4('COPERNICUS/S2_SR', im_date4, ['B8','B4','B3'], loc_pt_latlon, buffer_px)
+#     plt4 = cpf.plot_array_image(im_array4)
+#     st.pyplot(plt4)
     
     
 with st.expander('Selected points'):

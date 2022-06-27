@@ -18,13 +18,19 @@ import plotnine as p9
 df = pd.DataFrame(
     {'City': ['Buenos Aires', 'Brasilia', 'Santiago', 'Bogota', 'Caracas'],
       'Country': ['Argentina', 'Brazil', 'Chile', 'Colombia', 'Venezuela'],
+      'date': ['2020-01-01', '2017-01-02', '2018-01-01', '2024-01-02', '2023-01-01'],
       'Latitude': [-34.58, -15.78, -33.45, 4.60, 10.48],
       'Longitude': [-58.66, -47.91, -70.66, -74.08, -66.86]})
 df['nothing'] = str(np.nan)
 
-colname = 'Latitude'
+df
 
-colname not in list(df.columns)
+# %%
+a = pd.to_datetime(df['date'])
+b = datetime.strptime('2020-03-01', '%Y-%m-%d')
+
+b > a[1]
+type(a[1])
 # df.columns
 # %%
 
@@ -95,3 +101,5 @@ month_start_all = [datetime.strftime(datetime.strptime('2000-' + str(x) + '-01',
 
 month_start_all
 
+# %%
+helhpd.Timestamp(1  )
