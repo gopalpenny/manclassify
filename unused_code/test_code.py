@@ -23,8 +23,8 @@ df = pd.DataFrame(
       'Longitude': [-58.66, -47.91, -70.66, -74.08, -66.86]})
 df['nothing'] = str(np.nan)
 
-df
-
+df['test'] = (df['Longitude'] > -50) & (df['Latitude'] < 0)
+df.groupby(['test','City'], as_index = False).agg({'Longitude' : 'mean'})
 # %%
 a = pd.to_datetime(df['date'])
 b = datetime.strptime('2020-03-01', '%Y-%m-%d')
@@ -102,4 +102,9 @@ month_start_all = [datetime.strftime(datetime.strptime('2000-' + str(x) + '-01',
 month_start_all
 
 # %%
-helhpd.Timestamp(1  )
+list1 = [0,1]
+list2 = [2,3]
+
+lists = [list1, list2]
+
+lists[0][1]
