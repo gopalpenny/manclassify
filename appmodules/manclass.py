@@ -617,12 +617,14 @@ def plotSpectra(loc_id, timeseries_dir_path, date_range, spectra_list):
     print(sent_range)
     p_spectra = (
         p9.ggplot(data = sent_range[sent_range['freq_nm'] > 0], mapping = p9.aes(x = 'freq_nm', y = 'Reflectance', color = 'rangenum')) +
-        p9.geom_point(size = 4) + p9.geom_line() + 
+        p9.geom_point(size = 4) + p9.geom_line(size = 2) + 
         p9.xlab('Frequency, nm') +
         p9.expand_limits(y = (0, 0.2)) +
-        p9.scale_color_manual(['purple','yellow']) +
+        p9.scale_color_manual(['#572851','#FAE855']) +
         PlotTheme() +
         p9.theme(legend_position = 'none',
+                 panel_background = p9.element_rect(fill = '#888888'),
+                 panel_grid_major = p9.element_line(color = '#CCCCCC'),
                  figure_size = (4.5,2)))
     
     return p_spectra
