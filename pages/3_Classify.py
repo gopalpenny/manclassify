@@ -501,11 +501,32 @@ if 'spectrum_range_2' not in st.session_state:
 def update_spectra_range():
     st.session_state['spectrum_range_1'] = st.session_state['spectrum_r1']
     st.session_state['spectrum_range_2'] = st.session_state['spectrum_r2']
+    
+def bound_val(val, bounds):
+    if val < bounds[0]:
+        val = bounds[0]
+    elif val > bounds[1]:
+        val = bounds[0]
+        
+    return val
+    
+def outside_bounds(spec_range_tuple, datetime_range):
+    outside = False
+    if spec_range_tuple[0] < datetime_range[0]:
+        outside = True
+    if spec_range_tuple[1] > datetime_range[1]:
+        outside = True
+        
+    return outside
 
 with spectrum_slider_date_col[0]:
-    spectrum_range_1 = st.slider('Range 1', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_1'], on_change = update_spectra_range, key = 'spectrum_r1')
+    if outside_bounds(st.session_state['spectrum_range_1'], datetime_range):
+        st.session_state['spectrum_range_1'] = (month_seq[1], month_seq[2])
+    spectrum_range_1 = st.slider('Spectrum range 1', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_1'], on_change = update_spectra_range, key = 'spectrum_r1')
 with spectrum_slider_date_col[1]:
-    spectrum_range_2 = st.slider('Range 2', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_2'], on_change = update_spectra_range, key = 'spectrum_r2')
+    if outside_bounds(st.session_state['spectrum_range_2'], datetime_range):
+        st.session_state['spectrum_range_2'] = (month_seq[2], end_date)
+    spectrum_range_2 = st.slider('Spectrum range 2', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_2'], on_change = update_spectra_range, key = 'spectrum_r2')
 
 
 spectra_list = [spectrum_range_1, spectrum_range_2]
