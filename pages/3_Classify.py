@@ -173,7 +173,7 @@ def prev_button():
         new_locid = class_df_filter.loc_id.max()
     st.session_state.loc_id = int(new_locid)
 
-def go_to_id(id_to_go, year):
+def go_to_id_year(id_to_go, year):
     st.session_state.loc_id = int(id_to_go)
     st.session_state.classification_year = int(year)
     st.session_state.subclass_year = 'Subclass' + str(year)
@@ -213,7 +213,7 @@ with s2colB:
 with s2colC:
     st.text("")
     st.text("")
-    st.button('Go', on_click = go_to_id, args = (id_to_go, year_to_go, ))
+    st.button('Go', on_click = go_to_id_year, args = (id_to_go, year_to_go, ))
     
 # loc_id_num = loc_id
 # loc_id = 1

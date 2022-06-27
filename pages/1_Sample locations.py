@@ -17,6 +17,8 @@ import ee
 import sys
 import plotnine as p9
 import re
+from streamlit_folium import st_folium
+import folium
 import appmodules.manclass as mf
 
 gdrive_path = '/Users/gopal/Google Drive'
@@ -50,12 +52,123 @@ else:
 
 st.title("Sampling region")
 
-col1, col2, col3 = st.columns([1,2,1])
+main_columns = st.columns([1,1])
 
 # with col1:
 #     st.pyplot(p9.ggplot.draw(p_map))
-with col2:
+with main_columns[0]:
     st.pyplot(p9.ggplot.draw(p_map))
+    
+
+# loc_pt = allpts[allpts.loc_id == loc_id]
+
+
+loc = gpd.read_file(sample_locations_path).set_crs(4326)
+
+
+st_session_state = {}
+if 'loc_id' not in st.session_state:
+    st.session_state['loc_id'] = 1
+    
+loc_id = st.session_state['loc_id']
+
+
+
+def next_button():
+    class_df_filter = st.session_state.class_df_filter
+    current_loc_id = st.session_state.loc_id
+    new_locid = class_df_filter.loc_id[class_df_filter['loc_id'] > current_loc_id].min()
+    
+    # loc_id is max for filters, then cycle back to beginning
+    if np.isnan(new_locid):
+        new_locid = class_df_filter.loc_id.min()
+    st.session_state.loc_id = int(new_locid)
+    
+def prev_button():
+    class_df_filter = st.session_state.class_df_filter
+    current_loc_id = st.session_state.loc_id
+    new_locid = class_df_filter.loc_id[class_df_filter['loc_id'] < current_loc_id].max()
+    
+    # loc_id is min for filters, then cycle back to end
+    if np.isnan(new_locid):
+        new_locid = class_df_filter.loc_id.max()
+    st.session_state.loc_id = int(new_locid)
+
+def go_to_id(id_to_go, year):
+    st.session_state.loc_id = int(id_to_go)
+    st.session_state.classification_year = int(year)
+    st.session_state.subclass_year = 'Subclass' + str(year)
+    
+
+
+s1colA, s1colB, s1colC = st.sidebar.columns([3,1,1])
+
+# side_layout = st.sidebar.beta_columns([1,1])
+with s1colA: #scol2 # side_layout[-1]:
+    st.markdown('### Location ID: ' + str(loc_id))
+    # loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
+    
+    
+# %% 
+# GO TO EXPANDER
+
+go_to_expander = st.sidebar.expander('Go to')
+
+
+def go_to_id(id_to_go):
+    st.session_state.loc_id = int(id_to_go)
+
+with go_to_expander:
+    # st.text('go to year not working')
+    s2colA, s2colB = go_to_expander.columns([2,1])
+
+with s1colC:
+    st.button('Next', on_click = next_button, args = ())
+with s1colB:
+    st.button('Prev', on_click = prev_button, args = ())
+    
+with s2colA:
+    id_to_go = st.text_input("ID", value = str(loc_id))
+with s2colB:
+    st.text("")
+    st.text("")
+    st.button('Go', on_click = go_to_id, args = (id_to_go, ))
+    
+# loc_id_num = loc_id
+# loc_id = 1
+loc_pt = loc[loc.loc_id == loc_id]
+
+st.write(loc_pt)
+
+# %%
+
+adj_y_m = 0
+adj_x_m = 30
+
+loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
+loc_pt_latlon_shifted = mf.shift_points_m(loc_pt, adj_x_m, adj_y_m)
+
+
+# loc_pt_latlon = [13, 77]
+loc_pt_latlon_adj = [loc_pt_latlon_shifted.geometry.y, loc_pt_latlon_shifted.geometry.x]
+
+# m_folium = folium.Map()
+m_folium = folium.Map(location = loc_pt_latlon, zoom_start = 18)
+tile = folium.TileLayer(
+        tiles = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr = 'Esri',
+        name = 'Esri Satellite',
+        overlay = False,
+        control = True
+        ).add_to(m_folium)
+
+
+m_folium \
+    .add_child(folium.CircleMarker(location = loc_pt_latlon, radius = 5)) \
+    .add_child(folium.CircleMarker(location = loc_pt_latlon_adj, radius = 5, color = 'red'))
+    
+with main_columns[1]:
+    st_folium(m_folium, height = 400, width = 600)
 
 # %%
 
