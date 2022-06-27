@@ -492,10 +492,20 @@ snapshot_dates = [im_date1, im_date2, im_date3]
 spectrum_slider_date_col = st_snapshots_dates_cols[3:5]
 # spectrum_slider_col = spectrum_col.columns([1,1])
 
+if 'spectrum_range_1' not in st.session_state:
+    st.session_state['spectrum_range_1'] = (month_seq[1], month_seq[2])
+if 'spectrum_range_2' not in st.session_state:
+    st.session_state['spectrum_range_2'] = (month_seq[2], end_date)
+    
+    
+def update_spectra_range():
+    st.session_state['spectrum_range_1'] = st.session_state['spectrum_r1']
+    st.session_state['spectrum_range_2'] = st.session_state['spectrum_r2']
+
 with spectrum_slider_date_col[0]:
-    spectrum_range_1 = st.slider('Range 1', min_value = start_date, max_value = end_date, value = (start_date, month_seq[2]))
+    spectrum_range_1 = st.slider('Range 1', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_1'], on_change = update_spectra_range, key = 'spectrum_r1')
 with spectrum_slider_date_col[1]:
-    spectrum_range_2 = st.slider('Range 2', min_value = start_date, max_value = end_date, value = (month_seq[1], end_date))
+    spectrum_range_2 = st.slider('Range 2', min_value = start_date, max_value = end_date, value = st.session_state['spectrum_range_2'], on_change = update_spectra_range, key = 'spectrum_r2')
 
 
 spectra_list = [spectrum_range_1, spectrum_range_2]

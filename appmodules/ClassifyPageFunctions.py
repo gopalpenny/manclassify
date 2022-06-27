@@ -67,6 +67,46 @@ def clear_filter(lat_min, lat_max, lon_min, lon_max):
 # @st.cache
 def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longitude, buffer_px, 
                         return_geopandas = False):
+    """
+    Get an earth engine image near a point
+
+    Parameters
+    ----------
+    im_collection_id : str
+        DESCRIPTION.
+    im_date : str
+        DESCRIPTION.
+    bands_rgb : list
+        Band names.
+    latitude : float
+        Latitude (EPSG 4326).
+    longitude : float
+        Longitude (EPSG 4326).
+    buffer_px : int
+        Number of pixels to buffer on each side.
+    return_geopandas : bool, optional
+        If True, return geopandas.DataFrame, otherwise np.array. The default is False.
+
+    Returns
+    -------
+    return_val : np.array or geopandas.DataFrame
+        m x n grid with bands specified by bands_rgb.
+        
+    
+    Examples
+    --------
+    im_array = get_image_near_point(im_collection_id = 'COPERNICUS/S2_SR', 
+                                    im_date = '2020-02-03',  
+                                    bands_rgb = ['B8','B4','B3'], 
+                                    latitude = 11.4086, 
+                                    longitude = 77.7791, 
+                                    buffer_px = 10, 
+                                    return_geopandas = False)
+    plt = plot_array_image(im_array1)
+    plt.show()
+
+    """
+    
     
         
     start_datetime = datetime.strptime(im_date,'%Y-%m-%d')
@@ -92,7 +132,7 @@ def get_image_near_point(im_collection_id, im_date,  bands_rgb, latitude, longit
     kernel_list = ee.List.repeat(1, imdim)
     kernel_lists = ee.List.repeat(kernel_list, imdim)
     kernel = ee.Kernel.fixed(imdim, imdim, kernel_lists, 
-                             x = buffer_px + 1, y = buffer_px + 1)
+                             x = buffer_px, y = buffer_px)
     
     
     im_eearray = im.neighborhoodToArray(kernel)
@@ -161,21 +201,21 @@ def plot_array_image(im_array):
 # %% 
 # Cached funtions for each date to more quickly disply images on reload
 
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True,allow_output_mutation=True)
 def get_image_near_point1(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
     im_array = get_image_near_point(
         'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
         loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
     return im_array
 
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True,allow_output_mutation=True)
 def get_image_near_point2(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
     im_array = get_image_near_point(
         'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
         loc_pt_latlon[1].iloc[0], buffer_px, return_geopandas = False)
     return im_array
 
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True,allow_output_mutation=True)
 def get_image_near_point3(im_collection_id, im_date, bands_rgb, loc_pt_latlon, buffer_px):
     im_array = get_image_near_point(
         'COPERNICUS/S2_SR', im_date, bands_rgb, loc_pt_latlon[0].iloc[0], 
