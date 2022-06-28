@@ -24,17 +24,22 @@ Created on Sun Jun 12 14:54:31 2022
 import streamlit as st
 st.set_page_config(page_title="Overview", layout="wide", page_icon="🌏")
 import pandas as pd
-# import numpy as np
+import numpy as np
 import os
 import plotnine as p9
 from datetime import datetime
 import appmodules.manclass as mf
+# import appmodules.SamplePageFunctions as spf
+import appmodules.OverviewPageFunctions as opf
 # import re
 # from plotnine import *
 # import leafmap
 
 import importlib
 importlib.reload(mf)
+importlib.reload(opf)
+
+
 
 #%%
 
@@ -52,48 +57,24 @@ if 'app_path' not in st.session_state:
 if 'proj_name' not in st.session_state:
     st.session_state['proj_name'] = 'region1'
     
-if 'proj_path' not in st.session_state:
-    st.session_state['proj_path'] = os.path.join(st.session_state.app_path, st.session_state.proj_name)
-    
-    
-if 'region_status' not in st.session_state:
-    st.session_state['region_status'] = "Not done"
-    
-if 'samples_status' not in st.session_state:
-    st.session_state['samples_status'] = "Not done"
-# if 'proj_path' not in st.session_state:
-#     st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj)
-
-if 'proj_vars' not in st.session_state:
-    st.session_state['proj_vars'] = mf.readProjectVars(st.session_state['proj_path'])
-    
-if 'map_theme' not in st.session_state:
-    st.session_state['map_theme'] = p9.theme(panel_background = p9.element_rect(fill = None),      
-                     panel_border = p9.element_rect(),
-                     panel_grid_major=p9.element_blank(),
-                     panel_grid_minor=p9.element_blank(),
-                     plot_background=p9.element_rect(fill = None))
-    
-
-# if st.checkbox("Display Session Variables"):
-#     st.markdown('* st.session_state.app_path: ' + st.session_state.app_path +
-#                 '\n* st.session_state.proj_name: ' + st.session_state.proj_name +
-#                 '\n* st.session_state.proj_path: ' + st.session_state.proj_path)
-
+# opf.getProjStatus()
 
 st.title("Dashboard")
 
-st.session_state.app_path = st.text_input("Application directory (must be in Google Drive and synced locally)", value = default_app_path)
+project_columns = st.columns([3,1])
 
-projects = os.listdir(st.session_state.app_path)
+with project_columns[0]:
+    st.text_input("Application directory (must be in Google Drive and synced locally)", on_change = opf.getProjStatus,
+                  value = default_app_path, key = 'app_path')
 
-# %%
-# os.walk(default_app_path)
-# %%
-
-
-st.session_state.proj_name = st.selectbox("Select a project", options = tuple(projects))
-st.session_state.proj_path = os.path.join(st.session_state.app_path, st.session_state.proj_name)
+with project_columns[1]:
+    projects_all = os.listdir(st.session_state.app_path)
+    projects = [f for f in projects_all if not f.startswith('.')] + ['Create new project']
+    st.selectbox("Select a project", options = tuple(projects), 
+                  key = 'proj_name_box',
+                  on_change = opf.UpdateProjName)
+    if st.session_state['proj_name_box'] == 'Create new project':
+        st.text_input('New project name',key = 'new_project_name', on_change = opf.CreateNewProject)
 
 
 start_date_str = (st.session_state['proj_vars']['classification_start_month'] + ' ' +
@@ -101,11 +82,29 @@ start_date_str = (st.session_state['proj_vars']['classification_start_month'] + 
                   str(st.session_state['proj_vars']['classification_year_default']))
 
 
+with st.expander('View project directory structure'):
+    st.markdown("""
+The `project_path` is determined as `app_path/project_name`. The structure of this directory is:
+    
+    ```
+    project_path
+    - project_vars.json
+    - region1_classification/
+      - location_classification.csv
+    - region1_download_timeseries/
+      - pt_ts_loc0_s2.csv
+      - pt_ts_loc0_s1.csv
+    - region1_sample_locations/
+      - region.shp
+      - random_locations.shp
+      - sample_locations.shp
+    ```
+                """)
+
 st.markdown("""### Project timespan
             
 Timeseries will be downloaded for dates contained within this timespan.
-Pixels can only be classified for years within this timespan. If the end
-date is less than six months into the year, that year will be excluded.
+Pixels can only be classified for years within this timespan.
 Be careful changing this timespan if you've already started downloading timeseries
 data.
             """)
@@ -113,29 +112,44 @@ data.
 m0cols = st.columns([1,1,1])
 with m0cols[0]:
     prior_start_date = datetime.strptime(st.session_state['proj_vars']['proj_start_date'] , '%Y-%m-%d')
-    project_start_datetime = st.date_input('Start date', 
-                                           value = prior_start_date)
+    project_start_datetime = st.date_input('Start date (' + st.session_state['proj_vars']['proj_start_date'] + ')', 
+                                           value = prior_start_date, key = 'overview_proj_start_date')
     project_start_date = datetime.strftime(project_start_datetime, "%Y-%m-%d")
 with m0cols[1]:
     prior_end_date = datetime.strptime(st.session_state['proj_vars']['proj_end_date'], '%Y-%m-%d')
-    project_end_datetime = st.date_input('End date',
+    project_end_datetime = st.date_input('End date (' + st.session_state['proj_vars']['proj_end_date'] + ')',
                                          value = prior_end_date)
     project_end_date = datetime.strftime(project_end_datetime, "%Y-%m-%d")
 with m0cols[2]:
     st.markdown('#')
-    st.button('Set project timespan (NOT WORKING)',
-               on_click = mf.setProjectTimespan, 
-               args = (project_start_date, project_end_date, st.session_state['proj_path'], ))
+    st.button('Set project timespan',
+               on_click = opf.setProjectTimespan, 
+               args = (project_start_date, project_end_date, ))
 
 # st.number_input()
 
-st.markdown('### Start date for classification year (current: )', )
+class_start_date_format = (st.session_state['proj_vars']['classification_start_month'] + 
+                           ' ' + str(st.session_state['proj_vars']['classification_start_day']) + ', ' +
+                           str(st.session_state['proj_vars']['classification_year_default']))
+st.markdown('### Start date for classification year (current: ' + class_start_date_format + ')', )
+st.markdown("""
+`Default year` is the default year for classification (the Classify page will initialize to this year).
+`Month` and `Day` represent the start date
+for the classification for each year.
+            """)
 m1cols = st.columns([1, 1, 1, 2])
+
 
 
 with m1cols[0]:
     proj_years = st.session_state['proj_vars']['proj_years']
     default_year = st.session_state['proj_vars']['classification_year_default']
+    if default_year < np.min(proj_years):
+        default_year = int(np.min(proj_years))
+        st.session_state['proj_vars']['classification_year_default'] = default_year
+    elif default_year > np.max(proj_years):
+        default_year = int(np.max(proj_years))
+        st.session_state['proj_vars']['classification_year_default'] = default_year
     idx_default_year = [i for i in range(len(proj_years)) if proj_years[i] == default_year][0]
     year_default = st.selectbox("Default year", options = proj_years, 
                                     index = idx_default_year)
@@ -153,10 +167,8 @@ with m1cols[2]:
 with m1cols[3]:
     st.markdown('#')
     st.button('Set start date for classification year', 
-              on_click = mf.setProjectStartDate, 
-              args = (year_default, start_month, start_day, st.session_state['proj_path'], ))
-    
-data_path_files = pd.DataFrame({'Files': os.listdir(st.session_state.proj_path)})
+              on_click = opf.setClassificationStartDate, 
+              args = (year_default, start_month, start_day, ))
 
 
 st.write(st.session_state['proj_vars'])

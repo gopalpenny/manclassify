@@ -15,6 +15,118 @@ import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import appmodules.manclass as mf
+import os
+
+# %%
+
+
+
+def InitializeClassDF():
+    proj_years = st.session_state['proj_vars']['proj_years']
+    subclass_years = ['Subclass' + str(y) for y in proj_years]
+    # default_subclass_year = 'Subclass' + str(st.session_state['proj_vars']['classification_year_default'])
+    
+    # Single year in file
+    # if os.path.exists(class_path): 
+    #     class_df = pd.read_csv(class_path)
+    # else:
+    #     class_df = pd.DataFrame(loc).drop(['geometry'], axis = 1)
+    #     class_df['Class'] = np.nan
+    #     class_df['Subclass'] = np.nan
+    #     class_df['Year'] = st.session_state['proj_vars']['classification_year_default']
+    
+    class_path = st.session_state['paths']['class_path']
+    random_path = st.session_state['paths']['random_locations_path']
+    
+    if os.path.exists(class_path): 
+        class_df = pd.read_csv(class_path)
+        subclass_columns = [col for col in list(class_df.columns) if 'Subclass' in col]
+        # print(subclass_columns)
+        proj_years_missing = [y for y in subclass_years if y not in subclass_columns]
+        
+        for i in range(len(proj_years_missing)):
+            if proj_years_missing[i] not in list(class_df.columns): # double checking to ensure we don't replace existing column
+                class_df[proj_years_missing[i]] = str(np.nan)
+            
+    elif st.session_state['status']['random_status']:
+        loc = gpd.read_file(random_path).set_crs(4326)
+        class_df = pd.DataFrame(loc['loc_id']).drop(['geometry'], axis = 1)
+        class_df['Class'] = np.nan
+        
+        for i in range(len(subclass_years)):
+            if subclass_years[i] not in list(class_df.columns): # double checking to ensure we don't replace existing column
+                class_df[subclass_years[i]] = str(np.nan)
+    else:
+        # st.warning(random_path + ' not yet created')
+        class_df = None
+        
+        
+    # OLD CODE WHEN I TRIED PUTTING ALL YEARS IN ONE CSV (WAS TOO SLOW)
+    # class_df_blank = pd.DataFrame(loc).drop(['geometry'], axis = 1)
+    # class_df_blank['Class'] = np.nan
+    # class_df_blank['Subclass'] = np.nan
+    
+    # if os.path.exists(class_path):
+    #     class_df = pd.read_csv(class_path)
+    #     class_df_years = list(set(class_df['Year']))
+        
+    #     proj_years_missing = [y for y in proj_years if y not in class_df_years]
+    #     for i in range(len(proj_years_missing)):
+    #         class_df_blank['Year'] = proj_years_missing[i]
+    #         class_df = class_df.append(class_df_blank, ignore_index = True)
+        
+    # else:
+    #     # add section for each year
+    #     for i in range(len(proj_years)):
+    #         class_df_blank['Year'] = proj_years[i]
+    #         if i == 0:
+    #             class_df = class_df_blank
+    #         else:
+    #             class_df = class_df.append(class_df_blank, ignore_index = True)
+    #     class_df.to_csv(class_path, index = False)
+        
+    return class_df
+
+def UpdateClassDF(loc_id, Class, Subclass,  new_class, new_subclass, subclass_year):
+    class_path = st.session_state['paths']['class_path']
+    loc_idx = st.session_state.class_df.loc_id == loc_id
+    
+    
+    # if subclass_year not in list(st.session_state.class_df.columns): # double checking to ensure we don't replace existing column
+    #     st.session_state.class_df[subclass_year] = np.nan
+    # year_idx = st.session_state.class_df.Year == year
+    # idx = [x & y for (x, y) in zip(loc_idx, year_idx)]
+    if Class == 'Input new':
+        st.session_state.class_df.loc[loc_idx, 'Class'] = new_class
+    else:
+        st.session_state.class_df.loc[loc_idx, 'Class'] = Class
+        
+        
+    if Subclass == 'Input new':
+        st.session_state.class_df.loc[loc_idx, subclass_year] = new_subclass
+    else:
+        st.session_state.class_df.loc[loc_idx, subclass_year] = Subclass
+        
+    st.session_state.class_df.to_csv(class_path, index = False)
+
+    
+
+# %%
+
+def build_allpts(proj_path):
+    loc = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)
+    ts_status_path = mf.TimeseriesStatusInit(proj_path)
+    ts_status = pd.read_csv(ts_status_path)[['loc_id','allcomplete']]
+    allpts = pd.merge(loc, ts_status, 'outer', on = 'loc_id').merge(st.session_state['class_df'], on = 'loc_id')
+    allpts['Downloaded'] = pd.Categorical(allpts.allcomplete, categories = [False, True])
+    allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
+    allpts['lat'] = allpts.geometry.y
+    allpts['lon'] = allpts.geometry.x
+    
+    return allpts
+
+# %%
 
 def apply_filter(lat_range, lon_range, class_type, subclass_type, downloaded):
     

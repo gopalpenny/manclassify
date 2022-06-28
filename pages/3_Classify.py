@@ -38,37 +38,15 @@ out_folder = 'gee_sentinel_ts'
 data_path = os.path.join(gdrive_ml_path, 'manclassify/script_output', out_folder)
 
 
+st.title('Pixel classification (' + str(st.session_state['classification_year']) + ')')
+if not st.session_state['status']['sample_status']:
+    st.markdown("Generate sample locations on `Sample Locations` page before proceeding")
+
+
 # %%
-
-# %%
-app_path = '/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data'
-proj_name = 'region1'
-proj_path = os.path.join(app_path, proj_name)
-
-sample_locations_dir_path = os.path.join(proj_path,proj_name + "_sample_locations")
-sample_locations_path = os.path.join(sample_locations_dir_path, "sample_locations.shp")
-region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
-
-
-region_status = os.path.exists(region_shp_path)
-sample_status = os.path.exists(sample_locations_path)
-
-timeseries_dir_name = proj_name + "_download_timeseries"
-timeseries_dir_path = os.path.join(proj_path, timeseries_dir_name)
-
-classification_dir_name = proj_name + "_classification"
-classification_dir_path = os.path.join(proj_path, classification_dir_name)
-if not os.path.exists(classification_dir_path): os.mkdir(classification_dir_path)
-    
-    
-# %%
-#
-loc = gpd.read_file(sample_locations_path).set_crs(4326)
-ts_status_path = mf.TimeseriesStatusInit(proj_path)
-
-# def plotRegionPoints(region_status, sample_status, ts_status_path, allpts):
-ts_status = pd.read_csv(ts_status_path)[['loc_id','allcomplete']]
-
+timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
+classification_dir_path = st.session_state['paths']['classification_dir_path']
+class_path = st.session_state['paths']['class_path']
 
 # %%
 if 'classification_year' not in st.session_state:
@@ -79,37 +57,24 @@ if 'subclass_year' not in st.session_state:
     
 
 
-class_path = os.path.join(classification_dir_path, 'location_classification.csv')
     
 # %%
 if 'class_df' not in st.session_state:
-    st.session_state['class_df'] = mf.InitializeClassDF(class_path, loc)
+    st.session_state['class_df'] = cpf.InitializeClassDF()
 else:
-    st.session_state['class_df'] = mf.InitializeClassDF(class_path, loc)
-    
-# %%
-    
-# if 'proj_vars' not in st.session_state:
-#     st.session_state['proj_vars'] = mf.readProjectVars(st.session_state['proj_path'])
-    
-    
+    st.session_state['class_df'] = cpf.InitializeClassDF()
 
-    
-# %%
-# allpts needed to map (ie w geometry) which points have been downloaded
-allpts = pd.merge(loc, ts_status, 'outer', on = 'loc_id').merge(st.session_state['class_df'], on = 'loc_id')
-allpts['Downloaded'] = pd.Categorical(allpts.allcomplete, categories = [False, True])
-allpts['Downloaded'] = allpts.Downloaded.cat.rename_categories(['No','Yes'])
-allpts['lat'] = allpts.geometry.y
-allpts['lon'] = allpts.geometry.x
+# %5
 
+
+
+allpts = cpf.build_allpts(st.session_state['paths']['proj_path'])
 st.session_state['allpts'] = allpts
 
 
 # %%
 lon_pts = allpts.geometry.x
 lat_pts = allpts.geometry.y
-
 lon_min = float(math.floor(lon_pts.min()))
 lon_max = float(math.ceil(lon_pts.max()))
 lat_min = float(math.floor(lat_pts.min()))
@@ -140,9 +105,6 @@ if 'class_df_filter' not in st.session_state:
 
 
 # %%
-
-
-st.title('Pixel classification (' + str(st.session_state['classification_year']) + ')')
 
 st_session_state = {}
 if 'loc_id' not in st.session_state:
@@ -219,19 +181,11 @@ with s2colC:
 # loc_id = 1
 loc_pt = allpts[allpts.loc_id == loc_id]
 
-# st.write(loc_pt.crs)
-# loc_pt_utm = 
-
-adj_y_m = 0
-adj_x_m = 30
-
-loc_pt_latlon_shifted = mf.shift_points_m(loc_pt, adj_x_m, adj_y_m)
-
 loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
-loc_pt_latlon_adj = [loc_pt_latlon_shifted.geometry.y, loc_pt_latlon_shifted.geometry.x]
 
 # %%
 
+region_shp_path = st.session_state['paths']['region_shp_path']
 region_shp = gpd.read_file(region_shp_path)
 p_map = (p9.ggplot() + 
           p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black") +
@@ -297,8 +251,8 @@ with scol2:
         new_subclass = st.text_input('New Sub-class')
         
 with st.sidebar:
-    st.button('Update classification', on_click = mf.UpdateClassDF,
-              args = (loc_id, ClassBox, Subclass, class_path, new_class, new_subclass, st.session_state['subclass_year'], ))
+    st.button('Update classification', on_click = cpf.UpdateClassDF,
+              args = (loc_id, ClassBox, Subclass, new_class, new_subclass, st.session_state['subclass_year'], ))
     # test
 
 
