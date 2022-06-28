@@ -23,22 +23,27 @@ def CreateNewProject():
     os.mkdir(new_project_path)
     st.session_state['proj_name_box'] = new_project_name
     st.session_state['proj_name'] = new_project_name
-    getProjStatus()
+    checkProjStatus()
     st.session_state['new_project_name'] = ''
     
 def UpdateProjName():
     print('running UpdateProjName()')
     if not st.session_state['proj_name_box'] == 'Create new project':
         st.session_state['proj_name'] = st.session_state['proj_name_box']
-        getProjStatus()
+        checkProjStatus()
+        
+def UpdateAppPath():
+    st.session_state['app_path'] = st.session_state['app_path_box']
+    checkProjStatus()
     
-def getProjStatus():
-    print('running getProjStatus()')
+def checkProjStatus():
+    print('running checkProjStatus()')
     paths = {}
     app_path = st.session_state['app_path']
     proj_name = st.session_state['proj_name']
     paths['proj_path'] = os.path.join(app_path, proj_name)
-    paths['sample_locations_dir_path'] = os.path.join(paths['proj_path'], proj_name + "_sample_locations")
+    paths['samples_dir_name'] = proj_name + "_sample_locations"
+    paths['sample_locations_dir_path'] = os.path.join(paths['proj_path'], paths['samples_dir_name'])
     paths['random_locations_path'] = os.path.join(paths['sample_locations_dir_path'], "random_locations.shp")
     paths['sample_locations_path'] = os.path.join(paths['sample_locations_dir_path'], "sample_locations.shp")
     paths['region_shp_path'] = os.path.join(paths['sample_locations_dir_path'],"region.shp")
@@ -60,6 +65,10 @@ def getProjStatus():
     st.session_state['status'] = status
     
     st.session_state['proj_vars'] = readProjectVars()
+    
+    
+    if not os.path.exists(paths['sample_locations_dir_path']): 
+        os.mkdir(paths['sample_locations_dir_path'])
     
 # %%
 def saveProjectVars(vars_dict):

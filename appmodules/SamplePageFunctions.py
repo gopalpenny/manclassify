@@ -15,7 +15,7 @@ import geemap
 import os
 import sys
 import numpy as np
-# import appmodules.OverviewPageFunctions as opf
+import appmodules.OverviewPageFunctions as opf
 import appmodules.ClassifyPageFunctions as cpf
 
 
@@ -43,34 +43,20 @@ def ImportShapefile(sample_locations_dir_path, path_to_shp_import):
         region_gpd.to_file(sample_locations_dir_path)
         
 
-def GenerateRandomPts(ic_name):
-    app_path = st.session_state['app_path']
-    proj_name = st.session_state['proj_name']
-    # Generate subdirectories
-    proj_path = os.path.join(app_path,proj_name)
-    sample_locations_dir_path = os.path.join(proj_path, proj_name + "_sample_locations")
-    region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
-    
-    
-    samples_dir_name = proj_name + '_sample_locations'
-    samples_dir_path = os.path.join(proj_path,samples_dir_name)
-    
-    random_pts_name = 'random_locations'
-    random_pts_path = os.path.join(samples_dir_path,random_pts_name + '.shp')
-    
+def GenerateRandomPts(ic_name):    
     # %% GENERATE THE SAMPLES IF random_locations.shp DOES NOT EXIST
-    if os.path.exists(random_pts_path):
-        st.write(random_pts_name + '.shp already exists')
+    if os.path.exists(st.session_state['paths']['random_locations_path']):
+        st.write('random_locations.shp already exists')
         
     else:
-        if not os.path.exists(samples_dir_path): 
-            os.mkdir(samples_dir_path)
-            
-        # Initialize earth engine
-        ee.Initialize()
+        # Initialize earth engine (if necessary)
+        try:
+            pt_test = ee.Geometry.Point([100, 10])
+        except:
+            ee.Initialize()
         
         # Import region.shp
-        region_shp = gpd.read_file(region_shp_path)
+        region_shp = gpd.read_file(st.session_state['paths']['region_shp_path'])
         
         # Convert region.shp to ee.FeatureCollection
         region_fc_full = geemap.geopandas_to_ee(region_shp)
@@ -92,9 +78,9 @@ def GenerateRandomPts(ic_name):
         task = ee.batch.Export.table.toDrive(
             collection = samp_fc,
             description = 'Generating random locations',
-            fileNamePrefix = random_pts_name,
+            fileNamePrefix = 'random_locations',
             fileFormat = 'SHP',
-            folder = samples_dir_name)
+            folder = st.session_state['paths']['samples_dir_name'])
         
         task.start()
         
@@ -102,28 +88,22 @@ def GenerateRandomPts(ic_name):
         
 # %%
 
-def InitiateSampleLocations(app_path, proj_name):
+def InitializeSampleLocations():
+    print('running InitializeSampleLocations()')
     
+    print(st.session_state['app_path'])
     # Generate subdirectories
-    proj_path = os.path.join(app_path,proj_name)
-    sample_locations_dir_path = os.path.join(proj_path, proj_name + "_sample_locations")
-    region_shp_path = os.path.join(sample_locations_dir_path,"region.shp")
+    proj_path = st.session_state['paths']['proj_path']
     
-    
-    samples_dir_name = proj_name + '_sample_locations'
-    samples_dir_path = os.path.join(proj_path,samples_dir_name)
-    
-    random_pts_name = 'random_locations'
-    random_pts_path = os.path.join(samples_dir_path,random_pts_name + '.shp')
-    samples_name = 'sample_locations'
-    samples_path = os.path.join(samples_dir_path,samples_name + '.shp')
+    random_pts_path = st.session_state['paths']['random_locations_path']
+    samples_path = st.session_state['paths']['sample_locations_path']
     
     # %% GENERATE THE SAMPLES IF random_locations.shp DOES NOT EXIST
     if os.path.exists(samples_path):
-        st.write(samples_name + '.shp already exists')
+        st.write('sample_locations.shp already exists')
         
     elif os.path.exists(random_pts_path) != True:
-        st.write(random_pts_name + '.shp does not yet exist. Need to create it first')
+        st.write('random_locations.shp does not yet exist. Need to create it first')
     else:
         # if not os.path.exists(samples_dir_path): 
         #     os.mkdir(samples_dir_path)
@@ -145,6 +125,8 @@ def InitiateSampleLocations(app_path, proj_name):
         sample_pts_prep.to_file(samples_path)
     
     st.session_state['class_df'] = cpf.InitializeClassDF()
+    opf.checkProjStatus()
+    # print(st.session_state['app_path'])
     
     
 # %%
@@ -237,7 +219,12 @@ def UpdateSamplePt(loc_id):
     shift_x = st.session_state['x_shift']
     shift_y = st.session_state['y_shift']
     
+    # orig_pt used
     orig_pt = st.session_state['sample_pts'].loc[loc_idx]
+    # print(orig_pt)
+    # print(orig_pt.crs)
+    # orig_crs = orig_pt.crs
+    orig_pt.geometry = gpd.points_from_xy(orig_pt.orig_lon, orig_pt.orig_lat) #.set_crs(orig_crs)
 
     # orig_geometry = orig_pt.geometry
     

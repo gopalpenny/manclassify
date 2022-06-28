@@ -50,22 +50,30 @@ importlib.reload(opf)
 # out_folder = 'region1'
 
 default_app_path = '/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data'
+    
+
+st.title("Dashboard")
+
 
 if 'app_path' not in st.session_state:
     st.session_state['app_path'] = default_app_path
-    
-if 'proj_name' not in st.session_state:
-    st.session_state['proj_name'] = 'region1'
-    
-# opf.getProjStatus()
 
-st.title("Dashboard")
+st.markdown('`app_path`')
+st.write(st.session_state['app_path'])
+
 
 project_columns = st.columns([3,1])
 
 with project_columns[0]:
-    st.text_input("Application directory (must be in Google Drive and synced locally)", on_change = opf.getProjStatus,
-                  value = default_app_path, key = 'app_path')
+    st.text_input("Application directory (must be in Google Drive and synced locally)", on_change = opf.UpdateAppPath,
+                  value = default_app_path, key = 'app_path_box')
+    
+if 'proj_name' not in st.session_state:
+    projects_all_init = os.listdir(st.session_state.app_path)
+    st.session_state['proj_name'] = projects_all_init[0]
+
+
+opf.checkProjStatus()
 
 with project_columns[1]:
     projects_all = os.listdir(st.session_state.app_path)
@@ -241,11 +249,6 @@ with st.sidebar:
     st.subheader("Project: " + st.session_state.proj_name)
     if st.checkbox('Show project files'):
         st.text('Files in ' + st.session_state.proj_path)
-        # st.write(data_path_files)
-        # dirlist = []
-        
-        # for dir in os.listdir(st.session_state.proj_path):
-        #     for file in os.listdir(os.path.join(st.session_state.proj_path, dir)):
         for directory in os.listdir(st.session_state.proj_path):
             dirpath = os.path.join(st.session_state.proj_path, directory)
             if os.path.isdir(dirpath):

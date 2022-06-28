@@ -76,7 +76,7 @@ with main_columns[0]:
 
 
 if 'loc_id' not in st.session_state:
-    st.session_state['loc_id'] = 1
+    st.session_state['loc_id'] = 0
     
 loc_id = st.session_state['loc_id']
 
@@ -101,7 +101,8 @@ path_to_shp_import = st.text_input('Path to shapefile',
               value = '/Users/gopal/Projects/ArkavathyTanksProject/arkavathytanks/spatial/CauveryBasin/Cauvery_boundary5.shp')
 
 if st.session_state['status']['region_status']: 
-    st.markdown('`Already imported (' + re.sub(st.session_state.app_path,'',region_shp_path) + ')`')
+    app_path = st.session_state['app_path']
+    st.markdown('`Already imported (' + re.sub(app_path,'',region_shp_path) + ')`')
 else:
     st.button('Import', on_click = spf.ImportShapefile, args = (sample_locations_dir_path, path_to_shp_import,))
         
@@ -140,11 +141,14 @@ Initialize sample locations *after the random locations are generated*. This cop
 classes from the basemap, as well as adjust the locations of the random points (e.g., so that they
 fall in the center of farms rather than on the border).
             """)
+            
+st.markdown('`app_path`')
+st.write(st.session_state['app_path'])
 
 if not st.session_state['status']['random_status']:
     st.markdown('`Generate random locations before initializing sample locations`')
 elif not st.session_state['status']['sample_status']: 
-    st.button('Initialize sample locations', on_click = spf.InitiateSampleLocations, args = (st.session_state.app_path,st.session_state.proj_name,))
+    st.button('Initialize sample locations', on_click = spf.InitializeSampleLocations)
 else:
     st.markdown('`Already done (' + re.sub(st.session_state.app_path,'',sample_locations_path) + ')`')
     if ('sample_pts' not in st.session_state):
@@ -158,40 +162,28 @@ With sample_locations.shp initialized, adjust the points using the sidebar and s
 # GO TO EXPANDER
 
 if st.session_state['status']['sample_status']:
+    
+    
+    st.sidebar.markdown("# Adjust points")
+    
     s1colA, s1colB, s1colC = st.sidebar.columns([3,1,1])
     
     # side_layout = st.sidebar.beta_columns([1,1])
     with s1colA: #scol2 # side_layout[-1]:
         st.markdown('### Location ID: ' + str(loc_id))
         # loc_id = int(st.number_input('Location ID', 1, allpts.query('allcomplete').loc_id.max(), 1))
-
-    
-
-    expander_go_to = st.sidebar.expander('Go to')
-    
-    with expander_go_to:
-        # st.text('go to year not working')
-        s2colA, s2colB = expander_go_to.columns([2,1])
     
     with s1colC:
         st.button('Next', on_click = spf.next_button, args = ())
     with s1colB:
         st.button('Prev', on_click = spf.prev_button, args = ())
         
-    with s2colA:
-        id_to_go = st.text_input("ID", value = str(loc_id))
-    with s2colB:
-        st.text("")
-        st.text("")
-        st.button('Go', on_click = spf.go_to_id, args = (id_to_go, ))
-        
-    # loc_id_num = loc_id
-    # loc_id = 1
+
     sample_pts = st.session_state['sample_pts']
     loc_pt_orig = random_pts[random_pts.loc_id == loc_id]
     sample_pt_set = sample_pts[sample_pts.loc_id == loc_id]
     sample_pt_set_latlon = [sample_pt_set.geometry.y, sample_pt_set.geometry.x]
-
+    
     
     arrow_columns = st.sidebar.columns([2, 1,1,1.3, 2])
     
@@ -254,7 +246,21 @@ if st.session_state['status']['sample_status']:
         st.markdown('###')
         st.text('')
         st.button('RESET', on_click = spf.reset_shift, args = (loc_id, ))
-
+        
+        
+    expander_go_to = st.sidebar.expander('Go to')
+    
+    with expander_go_to:
+        # st.text('go to year not working')
+        expander_go_to_cols = expander_go_to.columns([2,1])
+        
+    with expander_go_to_cols[0]:
+        id_to_go = st.text_input("ID", value = str(loc_id))
+    with expander_go_to_cols[1]:
+        st.text("")
+        st.text("")
+        st.button('Go', on_click = spf.go_to_id, args = (id_to_go, ))
+    
 
     loc_pt_latlon = [loc_pt_orig.geometry.y, loc_pt_orig.geometry.x]
     loc_pt_latlon_shifted = spf.shift_points_m(loc_pt_orig, st.session_state['x_shift'], st.session_state['y_shift'])
@@ -277,7 +283,7 @@ if st.session_state['status']['sample_status']:
     m_folium \
         .add_child(folium.CircleMarker(location = loc_pt_latlon, radius = 5)) \
         .add_child(folium.CircleMarker(location = loc_pt_latlon_adj, radius = 5, color = 'red')) \
-        .add_child(folium.CircleMarker(location = sample_pt_set_latlon, radius = 5, color = 'green'))
+        .add_child(folium.CircleMarker(location = sample_pt_set_latlon, radius = 5, color = 'limegreen'))
         
     with main_columns[1]:
         st_folium(m_folium, height = 400, width = 600)

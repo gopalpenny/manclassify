@@ -38,15 +38,6 @@ out_folder = 'gee_sentinel_ts'
 data_path = os.path.join(gdrive_ml_path, 'manclassify/script_output', out_folder)
 
 
-st.title('Pixel classification (' + str(st.session_state['classification_year']) + ')')
-if not st.session_state['status']['sample_status']:
-    st.markdown("Generate sample locations on `Sample Locations` page before proceeding")
-
-
-# %%
-timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
-classification_dir_path = st.session_state['paths']['classification_dir_path']
-class_path = st.session_state['paths']['class_path']
 
 # %%
 if 'classification_year' not in st.session_state:
@@ -56,6 +47,15 @@ if 'subclass_year' not in st.session_state:
     st.session_state['subclass_year'] = 'Subclass' + str(st.session_state['classification_year'])
     
 
+st.title('Pixel classification (' + str(st.session_state['classification_year']) + ')')
+if not st.session_state['status']['sample_status']:
+    st.markdown("Generate sample locations on `Sample Locations` page before proceeding")
+
+
+# %%
+timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
+classification_dir_path = st.session_state['paths']['classification_dir_path']
+class_path = st.session_state['paths']['class_path']
 
     
 # %%
@@ -108,7 +108,7 @@ if 'class_df_filter' not in st.session_state:
 
 st_session_state = {}
 if 'loc_id' not in st.session_state:
-    st.session_state['loc_id'] = 1
+    st.session_state['loc_id'] = 0
     
     
 loc_id = st.session_state['loc_id']
