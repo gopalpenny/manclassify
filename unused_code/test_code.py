@@ -22,9 +22,25 @@ df = pd.DataFrame(
       'Latitude': [-34.58, -15.78, -33.45, 4.60, 10.48],
       'Longitude': [-58.66, -47.91, -70.66, -74.08, -66.86]})
 df['nothing'] = str(np.nan)
+df['datetime'] = [datetime.strptime(x, '%Y-%m-%d') for x in df['date']]
 
 df['test'] = (df['Longitude'] > -50) & (df['Latitude'] < 0)
-df.groupby(['test','City'], as_index = False).agg({'Longitude' : 'mean'})
+# df.groupby(['test','City'], as_index = False).agg({'Longitude' : 'mean'})
+diffs = np.abs(df['datetime'] - datetime.strptime('2018-01-01', '%Y-%m-%d'))
+[df['datetime'][i] for i in range(len(diffs)) if np.min(diffs) == diffs[i]]
+
+np.mean(pd.Series([datetime.strptime(x, '%Y-%m-%d') for x in df['date']]))
+#%%
+
+gdf = gpd.GeoDataFrame(df, geometry = gpd.points_from_xy(df.Longitude, df.Latitude))
+
+gdf.loc[gdf.Country == "Brazil", 'geometry'] = gdf.geometry.iloc[3]
+
+gdf = gdf.set_crs(4326)
+gdf.geometry.crs
+#%%
+
+df['datetime'][1]
 # %%
 a = pd.to_datetime(df['date'])
 b = datetime.strptime('2020-03-01', '%Y-%m-%d')

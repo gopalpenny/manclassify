@@ -23,6 +23,7 @@ import os
 
 
 def InitializeClassDF():
+    print('running InitializeClassDF()')
     proj_years = st.session_state['proj_vars']['proj_years']
     subclass_years = ['Subclass' + str(y) for y in proj_years]
     # default_subclass_year = 'Subclass' + str(st.session_state['proj_vars']['classification_year_default'])
