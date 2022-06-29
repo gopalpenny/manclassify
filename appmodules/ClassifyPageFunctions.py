@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import appmodules.manclass as mf
+import appmodules.DownloadPageFunctions as dpf
 import os
 
 # %%
@@ -117,7 +118,7 @@ def UpdateClassDF(loc_id, Class, Subclass,  new_class, new_subclass, subclass_ye
 
 def build_allpts(proj_path):
     loc = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)
-    ts_status_path = mf.TimeseriesStatusInit(proj_path)
+    ts_status_path = dpf.TimeseriesStatusInit(proj_path)
     ts_status = pd.read_csv(ts_status_path)[['loc_id','allcomplete']]
     allpts = pd.merge(loc, ts_status, 'outer', on = 'loc_id').merge(st.session_state['class_df'], on = 'loc_id')
     allpts['Downloaded'] = pd.Categorical(allpts.allcomplete, categories = [False, True])

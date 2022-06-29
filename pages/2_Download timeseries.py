@@ -21,6 +21,7 @@ import plotnine as p9
 # import re
 import importlib
 import appmodules.manclass as mf
+import appmodules.DownloadPageFunctions as dpf
 
 # gdrive_path = '/Users/gopal/Google Drive'
 # gdrive_ml_path = os.path.join(gdrive_path, '_Research projects/ML')
@@ -55,7 +56,7 @@ importlib.reload(mf)
 if st.session_state['status']['sample_status']:
     loc = gpd.read_file(st.session_state['paths']['sample_locations_path'])
     
-    ts_status_path = mf.TimeseriesStatusInit(st.session_state['paths']['proj_path'])
+    ts_status_path = dpf.TimeseriesStatusInit(st.session_state['paths']['proj_path'])
     
     # def plot(region_status, sample_status, ts_status_path, )
     ts_status = pd.read_csv(ts_status_path)
@@ -113,7 +114,7 @@ loc_selected_numpts = loc_notdownloaded.iloc[0:NumPts]
 # st.write('test = ' + str(test))
 timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
 st.markdown("Date range to download date: `" + date_range[0] + '` to `' + date_range[1] + '`')
-st.button('Download points', on_click = mf.DownloadPoints, 
+st.button('Download points', on_click = dpf.DownloadPoints, 
           args = (loc_selected_numpts, date_range, timeseries_dir_path,ts_status,))
 
 # st.write(ts_status[0:10])
