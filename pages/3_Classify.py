@@ -53,7 +53,6 @@ if not st.session_state['status']['sample_status']:
 
 
 # %%
-timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
 classification_dir_path = st.session_state['paths']['classification_dir_path']
 class_path = st.session_state['paths']['class_path']
 
@@ -324,9 +323,6 @@ end_datetime = start_datetime + relativedelta(years = 1)
 datetime_range = [start_datetime, end_datetime]
 date_range = [datetime.strftime(x, '%Y-%m-%d') for x in datetime_range]
 start_date = date_range[0]
-# date_range = ['2019-06-01', '2020-06-01']
-# p_s1 = mf.GenS1plot(loc_id, timeseries_dir_path, date_range, plot_theme)
-# p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
     
 with col2:
     # st.write(m.to_streamlit())
@@ -398,9 +394,6 @@ with se2col2:
 start_date = datetime.strptime(date_range[0], '%Y-%m-%d')
 end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
 
-# p_s2 = mf.GenS2plot(loc_id, timeseries_dir_path, date_range, plot_theme)
-# st_snapshots = st.expander('View snapsnots')
-# st.markdown("""---""")
 st.markdown("""###""")
 break_col_width = 0.15
 st_snapshots_title_cols = st.columns([3,break_col_width,2])
@@ -421,7 +414,7 @@ with st_snapshots_title_cols[2]:
 st_snapshots_dates_cols = st.columns([1,1,1,break_col_width,0.8,0.8,0.35])
 # snapshot_dates_cols = st_snapshots_dates_cols[0:3]
 
-tsS2 = mf.GenS2data(loc_id, timeseries_dir_path, date_range).query('cloudmask == 0')
+tsS2 = mf.GenS2data(loc_id, date_range).query('cloudmask == 0')
 # tsS2 = tsS2[start_date <= tsS2['datetime']]
 # tsS2 = tsS2[tsS2['datetime'] <= end_date]
 
@@ -523,7 +516,7 @@ with spectrum_slider_date_col[2]:
     st.button('Update', key = 'go_to_spectra', on_click = update_spectra_range, )
 
 spectra_list = [st.session_state['spectrum_range_1'], st.session_state['spectrum_range_2']]
-p_sentinel = mf.plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_dates, spectra_list) 
+p_sentinel = mf.plotTimeseries(loc_id, date_range, month_seq, snapshot_dates, spectra_list) 
 
 # %%
 
@@ -567,7 +560,7 @@ with st_snapshots_cols[2]:
     
     
 with st_snapshots_cols[4]:
-    p_spectra = mf.plotSpectra(loc_id, timeseries_dir_path, date_range, spectra_list)
+    p_spectra = mf.plotSpectra(loc_id, date_range, spectra_list)
     st.pyplot(p9.ggplot.draw(p_spectra))
     
 # with stexp1col4:

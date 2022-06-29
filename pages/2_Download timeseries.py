@@ -102,27 +102,28 @@ if not st.session_state['status']['sample_status']:
     st.markdown("Generate sample locations on `Sample Locations` page before proceeding")
 else:
     # Number of points to download at a time
-    NumPts = int(st.number_input('Number of points', 1, value = 5))
+    st.markdown("Date range to download: `" + date_range[0] + '` to `' + date_range[1] + '`')
+    download_columns = st.columns([1,1,3])
+    with download_columns[0]:
+        NumPts = int(st.number_input('Number of points', 1, value = 5))
+    with download_columns[1]:
+        st.markdown("###")
+        st.text("")
+        # points to download
+        loc_selected_numpts = loc_notdownloaded.iloc[0:NumPts]
+        timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
+        st.button('Download points', on_click = dpf.DownloadPoints, 
+                  args = (loc_selected_numpts, date_range, timeseries_dir_path,ts_status,))
+    with download_columns[2]:
+        st.markdown("###")
+        st.text("")
+        st.button('Check and update status', on_click = dpf.TimeseriesUpdateAllStatus, args = (timeseries_dir_path,))
+        
+    st.write('Points to download:')
+    st.write(pd.DataFrame(loc_selected_numpts).drop('geometry', axis = 1))
+        
     
-# points to download
-loc_selected_numpts = loc_notdownloaded.iloc[0:NumPts]
-
-# def five():
-#     return 5
-# test = 0
-# test = st.button('Test', on_click = five, args = ())
-# st.write('test = ' + str(test))
-timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
-st.markdown("Date range to download date: `" + date_range[0] + '` to `' + date_range[1] + '`')
-st.button('Download points', on_click = dpf.DownloadPoints, 
-          args = (loc_selected_numpts, date_range, timeseries_dir_path,ts_status,))
-
-# st.write(ts_status[0:10])
-st.text('Points to download')
-
-
-
-if st.checkbox("Display Sample location data"):
-    st.write(loc_selected_numpts)
+    
+with st.expander('Downloaded files for all points'):
     st.write(ts_status)
 

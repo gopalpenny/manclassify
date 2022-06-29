@@ -37,7 +37,8 @@ def testfunc():
 
 
 # def GetLocTimeseries(loc_id, timeseries_dir_path, plot_theme):
-def GenS1data(loc_id, timeseries_dir_path, date_range):
+def GenS1data(loc_id, date_range):
+    timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
     s1_filename = 'pt_ts_loc' + str(loc_id) + '_s1.csv'
     s1 = pd.read_csv(os.path.join(timeseries_dir_path,s1_filename))
     
@@ -48,24 +49,13 @@ def GenS1data(loc_id, timeseries_dir_path, date_range):
     s1['datetime'] = pd.to_datetime(s1['datestr'])
     
     s1_long = s1.melt(id_vars = 'datetime', value_vars = 'backscatter')
+    s1_long['source'] = 'Sentinel 1'
     
     return s1_long
-    
 
 
-    
-    # p_s1 = (p9.ggplot(data = s1, mapping = p9.aes('datetime', 'backscatter')) + 
-    #   p9.geom_point() + 
-    #   p9.geom_smooth(span = 0.25) + 
-    #   # p9.xlim()+
-    #   # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
-    #   p9.scale_x_datetime(limits = pd.to_datetime(date_range), 
-    #                       date_labels = '%Y-%b', date_breaks = '1 year') +
-    #   plot_theme)
-    
-    # return p_s1
-
-def GenS2data(loc_id, timeseries_dir_path, date_range):
+def GenS2data(loc_id, date_range):
+    timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
     s2_filename = 'pt_ts_loc' + str(loc_id) + '_s2.csv'
     s2 = pd.read_csv(os.path.join(timeseries_dir_path,s2_filename))
         
@@ -78,12 +68,45 @@ def GenS2data(loc_id, timeseries_dir_path, date_range):
     
     
     s2_long = s2.melt(id_vars = ['datetime','cloudmask'], value_vars = ['B8','B4','B3','B2','NDVI'])
+    s2_long['source'] = 'Sentinel 2'
     
     return s2_long
+
+def GenOLI8data(loc_id, date_range):
+    timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
+    oli8_filename = 'pt_ts_loc' + str(loc_id) + '_oli8.csv'
+    oli8 = pd.read_csv(os.path.join(timeseries_dir_path,oli8_filename))
+        
+    # time_series_pd['datestr'] = [re.sub('([0-9T])_.*','\\1',x) for x in time_series_pd_load['image_id']]
+    oli8['datestr'] = [re.sub('.*_([0-9]+)','\\1',x) for x in oli8['image_id']]
     
+    oli8['datetime'] = pd.to_datetime([datetime.strptime(x, '%Y%m%d') for x in oli8['datestr']])
+    oli8 = oli8.assign(NDVI = lambda df: (df.SR_B5 - df.SR_B4)/(df.SR_B5 + df.SR_B4))
+    
+    
+    oli8_long = oli8.melt(id_vars = ['datetime','cloudmask'], value_vars = ['SR_B7','SR_B6','SR_B5','SR_B4','SR_B3','SR_B2','NDVI'])
+    oli8_long['source'] = 'Landsat 8'
+    
+    return oli8_long
+    
+
+
+def GenCHIRPSdata(loc_id, date_range):
+    timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
+    chirps_filename = 'pt_ts_loc' + str(loc_id) + '_chirps.csv'
+    chirps = pd.read_csv(os.path.join(timeseries_dir_path,chirps_filename))
+    
+    chirps['datestr'] = [str(x) for x in chirps['image_id']]
+    
+    chirps['datetime'] = pd.to_datetime([datetime.strptime(x, '%Y%m%d') for x in chirps['datestr']])
+    
+    chirps_long = chirps.melt(id_vars = 'datetime', value_vars = 'precipitation')
+    chirps_long['source'] = 'CHIRPS'
+    
+    return chirps_long
     # # s2['backscatter'] = (s2['VV']**2 + s2['VH']**2) ** (1/2)
 
-def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_dates, spectra_list):
+def plotTimeseries(loc_id, date_range, month_seq, snapshot_dates, spectra_list):
     """
     
 
@@ -91,8 +114,6 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_
     ----------
     loc_id : Int
         Integer of the location ID.
-    timeseries_dir_path : Str
-        path to the directory containing timeseries data.
     date_range : list
         List of strings in "%Y-%m-%d" format
     month_seq : List
@@ -109,15 +130,20 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_
 
     """
     
-    s1 = GenS1data(loc_id, timeseries_dir_path, date_range)
-    s2 = GenS2data(loc_id, timeseries_dir_path, date_range)
+    timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
+    
+    s1 = GenS1data(loc_id, date_range)
+    s2 = GenS2data(loc_id, date_range)
     s2 = s2[s2['variable'] == 'NDVI']
+    oli8 = GenOLI8data(loc_id, date_range)
+    oli8 = oli8[oli8['variable'] == 'NDVI']
+    chirps = GenCHIRPSdata(loc_id, date_range)
     
     datetime_range = [datetime.strptime(x, '%Y-%m-%d') for x in date_range]
     
     year_begin_datetime = datetime.strftime(datetime_range[len(datetime_range)-1],"%Y-01-01")
     
-    sentinel = pd.concat([s1, s2])
+    alltimeseries = pd.concat([s1, s2, oli8, chirps])
     
     start_date = datetime_range[0]
     end_date = datetime_range[1]
@@ -127,15 +153,16 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_
     month_seq_df = pd.DataFrame({'datetime':month_seq})
 
     line_vars = ['NDVI']
-    smooth_vars = ['backscatter']
-    sentinel_cloudfree = sentinel.query('cloudmask != 1')
-    sentinel_cloudfree['date'] = [datetime.strftime(x, '%Y-%m-%d') for x in sentinel_cloudfree['datetime']]
+    smooth_vars_25 = ['backscatter']
+    smooth_vars_05 = ['precipitation']
+    alltimeseries_cloudfree = alltimeseries.query('cloudmask != 1')
+    alltimeseries_cloudfree['date'] = [datetime.strftime(x, '%Y-%m-%d') for x in alltimeseries_cloudfree['datetime']]
     
     # snapshots
     snapshot_datetimes = pd.DataFrame({
         'date' : snapshot_dates,
         'snapshot' : [str(x) for x in list(range(len(snapshot_dates)))]})
-    sentinel_snapshots = sentinel_cloudfree.merge(snapshot_datetimes, how = 'inner', on = 'date')
+    alltimeseries_snapshots = alltimeseries_cloudfree.merge(snapshot_datetimes, how = 'inner', on = 'date')
 
     # Build date range for spectra
     spectral_range = pd.DataFrame(columns = ['id','start_date', 'end_date', 'variable'])
@@ -143,40 +170,53 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_
         row_list = [i] + list(spectra_list[i]) + [line_vars[0]]
         spectral_range.loc[i] = row_list
         
-    var_min = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.min()
-    var_max = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.max()
+    var_min = alltimeseries_cloudfree[alltimeseries_cloudfree['variable'] == line_vars[0]].value.min()
+    var_max = alltimeseries_cloudfree[alltimeseries_cloudfree['variable'] == line_vars[0]].value.max()
     spectral_range['yval'] = var_min + spectral_range.id * (var_max - var_min) * 0.05
     
     month_seq_labels_full = [datetime.strftime(x, "%b %d, %Y") for x in month_seq]
     month_seq_labels_brief = [datetime.strftime(x, "%b %d") for x in month_seq]
     month_seq_labels = [month_seq_labels_full[i] if i == 0 or i == (len(month_seq)-len(month_seq)) else month_seq_labels_brief[i] for i in range(len(month_seq))]
     
-    p_sentinel = (
-        p9.ggplot(data = sentinel_cloudfree, mapping = p9.aes('datetime', 'value')) + 
+    p_timeseries = (
+        p9.ggplot(data = alltimeseries_cloudfree, mapping = p9.aes('datetime', 'value')) + 
         p9.annotate('rect',xmin = start_date, xmax = end_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'white', color = 'black', alpha = 1) +
         p9.geom_segment(data = spectral_range, mapping = p9.aes(x = 'start_date', xend = 'end_date', y = 'yval', yend = 'yval',color = 'id'), size = 2) +
         p9.geom_vline(data = month_seq_df, mapping = p9.aes(xintercept = 'datetime'), color = 'black', alpha = 0.5) +
         p9.annotate('vline', xintercept = year_begin_datetime, color = 'gray', linetype = 'dashed', alpha = 0.5) +
-        # p9.annotate('rect',xmin = end_date, xmax = post_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
-        p9.geom_point() + 
-        p9.geom_line(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(line_vars)]) + 
-        p9.geom_point(data = sentinel_snapshots, mapping=p9.aes(fill = 'snapshot'), size = 4) + 
-        p9.geom_smooth(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(smooth_vars)], span = 0.25) + 
+        p9.geom_point(mapping = p9.aes(shape = 'source')) + 
+        p9.geom_line(data = alltimeseries_cloudfree[alltimeseries_cloudfree.variable.isin(line_vars)], mapping = p9.aes(group = 'source')) + 
+        p9.geom_smooth(data = alltimeseries_cloudfree[alltimeseries_cloudfree.variable.isin(smooth_vars_25)], span = 0.1) + 
+        p9.geom_smooth(data = alltimeseries_cloudfree[alltimeseries_cloudfree.variable.isin(smooth_vars_05)], span = 0.05) + 
+        p9.geom_point(data = alltimeseries_snapshots, mapping=p9.aes(fill = 'snapshot'), size = 4) + 
+        p9.scale_color_continuous(guide = False) +
+        p9.scale_fill_discrete(guide = False) +
         p9.facet_wrap('variable', scales = 'free_y',ncol = 1) +
         # p9.xlim()+
         # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
         p9.scale_x_datetime(limits = [pre_date, post_date], breaks = month_seq, labels = month_seq_labels) + # date_labels = '%Y-%b', date_breaks = '1 year') +
-        PlotTheme() + p9.theme(axis_title_x = p9.element_blank(),
-                               panel_background= p9.element_rect(fill = 'gray', color = None),
-                               # panel_border= p9.element_rect(fill = 'gray'),
-                               legend_position = 'none'))
+        # PlotTheme() + 
+        # p9.theme(legend_position = (0.3,0.3))
+        PlotTheme() + 
+        p9.theme(
+                figure_size=(7.5,4.8),
+                axis_title_x = p9.element_blank(),
+                panel_background= p9.element_rect(fill = 'gray', color = None),
+                # panel_border= p9.element_rect(fill = 'gray'),
+                legend_title = p9.element_blank(),
+                legend_background = p9.element_rect(fill = 'black', color = None, alpha = 0.5),
+                legend_text = p9.element_text(color = 'white'),
+                axis_title_y = p9.element_blank(),
+                legend_position = 'bottom')
+        )
     
-    return p_sentinel
+    return p_timeseries
 
-def plotSpectra(loc_id, timeseries_dir_path, date_range, spectra_list):
+def plotSpectra(loc_id, date_range, spectra_list):
+    timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
     
-    s1 = GenS1data(loc_id, timeseries_dir_path, date_range)
-    s2 = GenS2data(loc_id, timeseries_dir_path, date_range)
+    s1 = GenS1data(loc_id, date_range)
+    s2 = GenS2data(loc_id, date_range)
     sentinel = pd.concat([s1, s2]).query('cloudmask != 1')
     # sentinel['date'] = [datetime.strftime(x, '%Y-%m-%d') for x in sentinel['datetime']]
     
