@@ -419,12 +419,38 @@ def GenS2data(loc_id, timeseries_dir_path, date_range):
     # # s2['backscatter'] = (s2['VV']**2 + s2['VH']**2) ** (1/2)
 
 def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_dates, spectra_list):
+    """
+    
+
+    Parameters
+    ----------
+    loc_id : Int
+        Integer of the location ID.
+    timeseries_dir_path : Str
+        path to the directory containing timeseries data.
+    date_range : list
+        List of strings in "%Y-%m-%d" format
+    month_seq : List
+        List of datetime.datetime values indicating the axis ticks and vertical gridlines.
+    snapshot_dates : List
+        List of datetime.datetime objects indicating the dates of the snapshot images in Classify page.
+    spectra_list : list
+        List of lists. Each sub-list contains the date ranges for spectra plot in Classify page.
+
+    Returns
+    -------
+    p_sentinel : matplotlib.plt
+        Plot of timeseries for the points in question.
+
+    """
     
     s1 = GenS1data(loc_id, timeseries_dir_path, date_range)
     s2 = GenS2data(loc_id, timeseries_dir_path, date_range)
     s2 = s2[s2['variable'] == 'NDVI']
     
     datetime_range = [datetime.strptime(x, '%Y-%m-%d') for x in date_range]
+    
+    year_begin_datetime = datetime.strftime(datetime_range[len(datetime_range)-1],"%Y-01-01")
     
     sentinel = pd.concat([s1, s2])
     
@@ -446,31 +472,26 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_
         'snapshot' : [str(x) for x in list(range(len(snapshot_dates)))]})
     sentinel_snapshots = sentinel_cloudfree.merge(snapshot_datetimes, how = 'inner', on = 'date')
 
-    # date range for spectra
+    # Build date range for spectra
     spectral_range = pd.DataFrame(columns = ['id','start_date', 'end_date', 'variable'])
     for i in range(len(spectra_list)):
         row_list = [i] + list(spectra_list[i]) + [line_vars[0]]
         spectral_range.loc[i] = row_list
         
-        
     var_min = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.min()
-    print(var_min)
-    # .value.min()
     var_max = sentinel_cloudfree[sentinel_cloudfree['variable'] == line_vars[0]].value.max()
-    # print('var_min')
-    # print(type(var_min))
-    # print(type(spectral_range.id))
     spectral_range['yval'] = var_min + spectral_range.id * (var_max - var_min) * 0.05
-        
-    print(spectral_range)
-    # spectral_range
-    # print(sentinel_cloudfree.variable[0])
+    
+    month_seq_labels_full = [datetime.strftime(x, "%b %d, %Y") for x in month_seq]
+    month_seq_labels_brief = [datetime.strftime(x, "%b %d") for x in month_seq]
+    month_seq_labels = [month_seq_labels_full[i] if i == 0 or i == (len(month_seq)-len(month_seq)) else month_seq_labels_brief[i] for i in range(len(month_seq))]
     
     p_sentinel = (
         p9.ggplot(data = sentinel_cloudfree, mapping = p9.aes('datetime', 'value')) + 
         p9.annotate('rect',xmin = start_date, xmax = end_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'white', color = 'black', alpha = 1) +
         p9.geom_segment(data = spectral_range, mapping = p9.aes(x = 'start_date', xend = 'end_date', y = 'yval', yend = 'yval',color = 'id'), size = 2) +
         p9.geom_vline(data = month_seq_df, mapping = p9.aes(xintercept = 'datetime'), color = 'black', alpha = 0.5) +
+        p9.annotate('vline', xintercept = year_begin_datetime, color = 'gray', linetype = 'dashed', alpha = 0.5) +
         # p9.annotate('rect',xmin = end_date, xmax = post_date, ymin = -np.Infinity, ymax = np.Infinity, fill = 'black', alpha = 0.5) +
         p9.geom_point() + 
         p9.geom_line(data = sentinel_cloudfree[sentinel_cloudfree.variable.isin(line_vars)]) + 
@@ -479,8 +500,7 @@ def plotTimeseries(loc_id, timeseries_dir_path, date_range, month_seq, snapshot_
         p9.facet_wrap('variable', scales = 'free_y',ncol = 1) +
         # p9.xlim()+
         # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
-        p9.scale_x_datetime(limits = [pre_date, post_date], 
-                            date_labels = '%Y-%b', date_breaks = '1 year') +
+        p9.scale_x_datetime(limits = [pre_date, post_date], breaks = month_seq, labels = month_seq_labels) + # date_labels = '%Y-%b', date_breaks = '1 year') +
         PlotTheme() + p9.theme(axis_title_x = p9.element_blank(),
                                panel_background= p9.element_rect(fill = 'gray', color = None),
                                # panel_border= p9.element_rect(fill = 'gray'),
