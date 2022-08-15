@@ -21,6 +21,12 @@ Created on Sun Jun 12 14:54:31 2022
 #   b. If sample points are present, include them
 #   c. If sample points have data, use a different shape
 
+
+
+
+debug = True
+if debug: print('start imports') 
+
 import streamlit as st
 st.set_page_config(page_title="Overview", layout="wide", page_icon="🌏")
 import pandas as pd
@@ -38,6 +44,12 @@ import appmodules.OverviewPageFunctions as opf
 import importlib
 importlib.reload(mf)
 importlib.reload(opf)
+
+
+# %%
+
+
+if debug: print('imports done') 
 
 
 

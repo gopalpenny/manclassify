@@ -26,8 +26,8 @@ import appmodules.DownloadPageFunctions as dpf
 # gdrive_path = '/Users/gopal/Google Drive'
 # gdrive_ml_path = os.path.join(gdrive_path, '_Research projects/ML')
 # sys.path.append(gdrive_ml_path)
-# from geemod import rs
-# from geemod import eesentinel as ees
+# from geemodules import rs
+# from geemodules import eesentinel as ees
 
 
 # app_path = '/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data'
