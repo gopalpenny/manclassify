@@ -15,4 +15,4 @@ dependencies:
   - jupyterlab
   - folium
   - streamlit-folium
-prefix: /Users/gopal/mambaforge/envs/manclassify
+  - leafmap
