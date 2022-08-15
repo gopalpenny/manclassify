@@ -1,0 +1,18 @@
+name: manclassify
+channels:
+  - local
+  - conda-forge
+dependencies:
+  - python=3.9
+  - geemap
+  - pandas
+  - numpy
+  - plotnine
+  - geopandas
+  - streamlit
+  - earthengine-api
+  - ipykernel
+  - jupyterlab
+  - folium
+  - streamlit-folium
+prefix: /Users/gopal/mambaforge/envs/manclassify
