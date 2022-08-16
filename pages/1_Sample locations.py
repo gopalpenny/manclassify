@@ -111,7 +111,7 @@ st.markdown("""---
 ### 2. Generate random locations
 
 Clicking the button `Generate random locations` uploads region.shp to Google Earth Engine and generates
-`N` random samples using the image collection specified.
+`N = 1000` random samples using the image collection specified.
             """)
 
 gen_random_columns = st.columns([1,3])
@@ -119,7 +119,7 @@ ic_name_list = ['COPERNICUS/S2_SR']
 with gen_random_columns[0]:
     ic_name = st.selectbox(label = 'GEE Image Collection', options = ic_name_list)
 with gen_random_columns[1]:
-    if not st.session_state['status']['random_status']:
+    if not st.session_state['status']['region_status']:
         st.markdown("#### ")
         st.markdown(" ")
         st.markdown('Need to import region shapefile *before* generating random locations`')

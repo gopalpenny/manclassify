@@ -40,7 +40,9 @@ def ImportShapefile(sample_locations_dir_path, path_to_shp_import):
         st.write('region.shp already exists')
     else:
         region_gpd = gpd.read_file(path_to_shp_import)
-        region_gpd.to_file(sample_locations_dir_path)
+        region_gpd.to_file(region_shp_path)
+        
+    opf.checkProjStatus()
         
 
 def GenerateRandomPts(ic_name):    
