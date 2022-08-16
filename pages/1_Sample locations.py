@@ -131,7 +131,7 @@ with gen_random_columns[1]:
         st.markdown("#### ")
         st.markdown(" ")
         random_pts = gpd.read_file(st.session_state['paths']['random_locations_path']).set_crs(4326)
-        st.markdown('`Locations already generated (' + re.sub(st.session_state.app_path,'',random_locations_path) + ')`')
+        st.markdown('Locations already generated (' + re.sub(st.session_state.app_path,'',random_locations_path) + ')')
 
 st.markdown("""---
 ### 3. Initialize sample locations
