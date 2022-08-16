@@ -102,7 +102,7 @@ path_to_shp_import = st.text_input('Path to shapefile',
 
 if st.session_state['status']['region_status']: 
     app_path = st.session_state['app_path']
-    st.markdown('`Already imported (' + re.sub(app_path,'',region_shp_path) + ')`')
+    st.markdown('Already imported (' + re.sub(app_path,'',region_shp_path) + ')')
 else:
     st.button('Import', on_click = spf.ImportShapefile, args = (sample_locations_dir_path, path_to_shp_import,))
         
@@ -150,7 +150,7 @@ if not st.session_state['status']['random_status']:
 elif not st.session_state['status']['sample_status']: 
     st.button('Initialize sample locations', on_click = spf.InitializeSampleLocations)
 else:
-    st.markdown('`Already done (' + re.sub(st.session_state.app_path,'',sample_locations_path) + ')`')
+    st.markdown('Already done (' + re.sub(st.session_state.app_path,'',sample_locations_path) + ')')
     if ('sample_pts' not in st.session_state):
         st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)    
         st.markdown("""
