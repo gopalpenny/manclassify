@@ -388,7 +388,7 @@ def rowStatus(rowList):
     """Helper function for TimeseriesUpdateLocStatus
     Checks to see if a csv file is available for all output files
     """
-    val = all(['.csv' in str(x) for x in rowList])
+    val = all(['.csv' in str(x) for x in rowList]) & (len(rowList) > 0)
     return val
 
 def TimeseriesUpdateLocStatus(loc_id, colname, new_status, timeseries_dir_path):

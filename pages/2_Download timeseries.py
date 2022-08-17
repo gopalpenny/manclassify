@@ -55,17 +55,23 @@ importlib.reload(mf)
 
 if st.session_state['status']['sample_status']:
     loc = gpd.read_file(st.session_state['paths']['sample_locations_path'])
+    loc['loc_set'] = loc['loc_set'] == '1'
     
     ts_status_path = dpf.TimeseriesStatusInit(st.session_state['paths']['proj_path'])
     
     # def plot(region_status, sample_status, ts_status_path, )
     ts_status = pd.read_csv(ts_status_path)
     ts_status_downloaded = ts_status.loc[ts_status.allcomplete].loc_id
+    
+    
+    # st.write(ts_status)
     loc_downloaded = loc.loc[loc.loc_id.isin(ts_status_downloaded)]
     
     # Points not yet downloaded
     ts_status_notdownloaded = ts_status.loc[~ts_status.allcomplete].loc_id
     loc_notdownloaded = loc.loc[loc.loc_id.isin(ts_status_notdownloaded)]
+    
+    # st.write(ts_status_downloaded)
 
 # %%
 
@@ -79,8 +85,9 @@ else:
     if st.session_state['status']['sample_status']:
         # sample_locations_shp = gpd.read_file(sample_locations_path)
         p_map = (p_map + 
-                 p9.geom_map(data = loc_notdownloaded, mapping = p9.aes(), color = 'black', shape = '+', size = 1) + 
-                 p9.geom_map(data = loc_downloaded, mapping = p9.aes(), shape = 'o', fill = 'red', color = None, size = 2))
+                 p9.geom_map(data = loc_notdownloaded.query('loc_set == False'), mapping = p9.aes(), color = '#888888', shape = '+', size = 1) + 
+                 p9.geom_map(data = loc_notdownloaded.query('loc_set'), mapping = p9.aes(), color = 'red', shape = '+', size = 3) + 
+                 p9.geom_map(data = loc_downloaded, mapping = p9.aes(), shape = 'o', fill = 'blue', color = None, size = 2))
 
 
 
@@ -110,7 +117,7 @@ else:
         st.markdown("###")
         st.text("")
         # points to download
-        loc_selected_numpts = loc_notdownloaded.iloc[0:NumPts]
+        loc_selected_numpts = loc_notdownloaded.loc[loc_notdownloaded['loc_set']].iloc[0:NumPts]
         timeseries_dir_path = st.session_state['paths']['timeseries_dir_path']
         st.button('Download points', on_click = dpf.DownloadPoints, 
                   args = (loc_selected_numpts, date_range, timeseries_dir_path,ts_status,))
