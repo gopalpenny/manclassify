@@ -34,7 +34,8 @@ def UpdateProjName():
         
 def UpdateAppPath():
     st.session_state['app_path'] = st.session_state['app_path_box']
-    checkProjStatus()
+    if 'proj_name' in st.session_state:
+        checkProjStatus()
     
 def checkProjStatus():
     print('running checkProjStatus()')

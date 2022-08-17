@@ -273,8 +273,8 @@ tile = folium.TileLayer(
 
 
 
-with st.sidebar:
-    st.number_input('num', 0, 5, 2)
+# with st.sidebar:
+#     st.number_input('num', 0, 5, 2)
     
 # col1, col2 = st.columns(2)
 
@@ -283,9 +283,9 @@ st_folium(m, height = 300, width = 600)
 with st.sidebar:
     st.subheader("Project: " + st.session_state.proj_name)
     if st.checkbox('Show project files'):
-        st.text('Files in ' + st.session_state.proj_path)
-        for directory in os.listdir(st.session_state.proj_path):
-            dirpath = os.path.join(st.session_state.proj_path, directory)
+        st.text('Files in ' + st.session_state.paths['proj_path'])
+        for directory in os.listdir(st.session_state.paths['proj_path']):
+            dirpath = os.path.join(st.session_state.paths['proj_path'], directory)
             if os.path.isdir(dirpath):
                 st.write(directory + ":")
                 for file in os.listdir(dirpath):
