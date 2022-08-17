@@ -111,7 +111,9 @@ opf.checkProjStatus()
 with project_columns[2]:
     projects_all = os.listdir(st.session_state.app_path)
     projects = [f for f in projects_all if not f.startswith('.')] + ['Create new project']
-    st.selectbox("Select a project", options = tuple(projects), 
+    project_indices_good = [i for i in range(len(projects)) if projects[i]==st.session_state['proj_name']] + [len(projects) - 1]
+    project_index = project_indices_good[0]
+    st.selectbox("Select a project", options = tuple(projects), index = project_index,
                   key = 'proj_name_box',
                   on_change = opf.UpdateProjName)
     if st.session_state['proj_name_box'] == 'Create new project':
