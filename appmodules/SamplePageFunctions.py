@@ -48,7 +48,7 @@ def ImportShapefile(sample_locations_dir_path, path_to_shp_import):
 def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed):    
     # %% GENERATE THE SAMPLES IF random_locations.shp DOES NOT EXIST
     if os.path.exists(st.session_state['paths']['random_locations_path']):
-        st.write('random_locations.shp already exists')
+        st.warning('random_locations.shp already exists')
         
     else:
         # Initialize earth engine (if necessary)
@@ -86,7 +86,7 @@ def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed):
         
         task.start()
         
-        st.success("Sent task to Earth Engine to generate random points")
+        st.success("Sent task to Earth Engine, will save random points to " + st.session_state['paths']['random_locations_path'])
         
 # %%
 

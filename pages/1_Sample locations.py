@@ -104,7 +104,7 @@ Add the path to a local shapefile (.shp) in the box below. This shapefile sets t
 st.markdown('')
 
 path_to_shp_import = st.text_input('Path to shapefile',
-              value = '/Users/gopal/Projects/ArkavathyTanksProject/arkavathytanks/spatial/CauveryBasin/Cauvery_boundary5.shp')
+              value = '-')
 
 if st.session_state['status']['region_status']: 
     app_path = st.session_state['app_path']
@@ -168,7 +168,7 @@ else:
     st.markdown('Already done (' + re.sub(st.session_state.app_path,'',sample_locations_path) + ')')
     if ('sample_pts' not in st.session_state):
         st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)   
-        st.session_state['sample_pts']['loc_set'] = st.session_state['sample_pts']['loc_set'] == '1' 
+        st.session_state['sample_pts']['loc_set'] = st.session_state['sample_pts']['loc_set'].astype('int64') == 1
         # st.session_state['sample_pts'] = sample_pts_read
         
         st.markdown("""
@@ -217,7 +217,7 @@ if st.session_state['status']['sample_status']:
     up_text = re.sub('^([0-9]+)','+\\1',str(st.session_state['y_shift'])) + ' m'
     right_text = re.sub('^([0-9]+)','+\\1',str(st.session_state['x_shift'])) + ' m'
     
-            
+    st.write(sample_pt_set.loc_set)
     if sample_pt_set.loc_set.iloc[0]:
         pt_set_str = 'YES'
     else:
@@ -308,6 +308,19 @@ if st.session_state['status']['sample_status']:
         
     with main_columns[1]:
         st_folium(m_folium, height = 400, width = 600)
+        
+
+# sample_pts_raw = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)   
+# sample_pts_fix = sample_pts_raw
+
+# sample_pts_fix['loc_set'] = sample_pts_fix['loc_set'].astype('int64') == 1
+# st.write(type(sample_pts_fix['loc_set'].iloc[0]))
+# st.write((sample_pts_fix['loc_set'].iloc[0]))
+
+# st.write(type(sample_pts_raw['loc_set'].iloc[0]))
+# st.write((sample_pts_raw['loc_set'].iloc[0]))
+
+
 
 
     

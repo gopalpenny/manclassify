@@ -55,7 +55,7 @@ importlib.reload(mf)
 
 if st.session_state['status']['sample_status']:
     loc = gpd.read_file(st.session_state['paths']['sample_locations_path'])
-    loc['loc_set'] = loc['loc_set'] == '1'
+    loc['loc_set'] = loc['loc_set'].astype('int64') == 1
     
     ts_status_path = dpf.TimeseriesStatusInit(st.session_state['paths']['proj_path'])
     
