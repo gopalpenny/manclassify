@@ -112,6 +112,15 @@ def UpdateClassDF(loc_id, Class, Subclass,  new_class, new_subclass, subclass_ye
         st.session_state.class_df.loc[loc_idx, subclass_year] = Subclass
         
     st.session_state.class_df.to_csv(class_path, index = False)
+    
+    allpts = build_allpts(st.session_state['paths']['proj_path'])
+    st.session_state['allpts'] = allpts
+    filterargs = st.session_state['filterargs']
+    apply_filter(lat_range = filterargs['lat'], 
+                lon_range = filterargs['lon'], 
+                class_type = filterargs['Class'], 
+                subclass_type = filterargs['Subclass'], 
+                downloaded = filterargs['Downloaded'])
 
     
 

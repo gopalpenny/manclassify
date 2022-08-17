@@ -186,11 +186,13 @@ loc_pt_latlon = [loc_pt.geometry.y, loc_pt.geometry.x]
 
 region_shp_path = st.session_state['paths']['region_shp_path']
 region_shp = gpd.read_file(region_shp_path)
+
+
 p_map = (p9.ggplot() + 
           p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black") +
-          p9.geom_map(data = allpts, mapping = p9.aes(), fill = 'lightgray', shape = 'o', color = None, size = 1, alpha = 1) +
-          p9.geom_map(data = st.session_state['class_df_filter'], mapping = p9.aes(fill = st.session_state['subclass_year']), shape = 'o', color = None, size = 2) +
-          p9.geom_map(data = loc_pt, mapping = p9.aes(), fill = 'black', shape = 'o', color = 'black', size = 4) +
+           p9.geom_map(data = allpts, mapping = p9.aes(), fill = 'lightgray', shape = 'o', color = None, size = 1, alpha = 1) +
+            p9.geom_map(data = st.session_state['class_df_filter'], mapping = p9.aes(fill = st.session_state['subclass_year']), shape = 'o', color = None, size = 2) +
+           p9.geom_map(data = loc_pt, mapping = p9.aes(), fill = 'black', shape = 'o', color = 'black', size = 4) +
           mf.MapTheme() + p9.theme(legend_position = (0.8,0.7)))
 
 # %%
