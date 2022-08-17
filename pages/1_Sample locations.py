@@ -114,11 +114,17 @@ Clicking the button `Generate random locations` uploads region.shp to Google Ear
 `N = 1000` random samples using the image collection specified.
             """)
 
-gen_random_columns = st.columns([1,3])
+gen_random_columns = st.columns([1,1,3])
 ic_name_list = ['COPERNICUS/S2_SR']
+
+    
 with gen_random_columns[0]:
-    ic_name = st.selectbox(label = 'GEE Image Collection', options = ic_name_list)
+    numRandomPts = st.number_input('Num pts', 1, 5000, value = 100, key = 'numRandomPts')
+
 with gen_random_columns[1]:
+    ic_name = st.selectbox(label = 'GEE Image Collection', options = ic_name_list)
+    
+with gen_random_columns[2]:
     if not st.session_state['status']['region_status']:
         st.markdown("#### ")
         st.markdown(" ")
@@ -126,7 +132,8 @@ with gen_random_columns[1]:
     elif not st.session_state['status']['random_status']: 
         st.markdown("### ")
         st.markdown(" ")
-        st.button('Generate random locations', on_click = spf.GenerateRandomPts, args = (ic_name,))
+        # numRandomPts = st.session_state['numRandomPts']
+        st.button('Generate random locations', on_click = spf.GenerateRandomPts, args = (ic_name, numRandomPts))
     else:
         st.markdown("#### ")
         st.markdown(" ")

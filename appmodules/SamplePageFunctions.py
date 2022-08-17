@@ -45,7 +45,7 @@ def ImportShapefile(sample_locations_dir_path, path_to_shp_import):
     opf.checkProjStatus()
         
 
-def GenerateRandomPts(ic_name):    
+def GenerateRandomPts(ic_name, numRandomPts):    
     # %% GENERATE THE SAMPLES IF random_locations.shp DOES NOT EXIST
     if os.path.exists(st.session_state['paths']['random_locations_path']):
         st.write('random_locations.shp already exists')
@@ -72,7 +72,7 @@ def GenerateRandomPts(ic_name):
         samp_fc = im.sample(
             region = region_fc,
             scale = 10,
-            numPixels = 1000,
+            numPixels = numRandomPts,
             seed = 10,
             geometries = True).map(rs.set_feature_id_func('loc_id')).select('loc_id')
         
