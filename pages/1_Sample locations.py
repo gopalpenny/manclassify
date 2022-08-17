@@ -36,7 +36,6 @@ importlib.reload(spf)
 
 # %%
 # region_path = os.path.join(st.session_state.proj_path,"region")
-proj_name = 'region1'
 
 
 
@@ -114,17 +113,19 @@ Clicking the button `Generate random locations` uploads region.shp to Google Ear
 `N = 1000` random samples using the image collection specified.
             """)
 
-gen_random_columns = st.columns([1,1,3])
+gen_random_columns = st.columns([1,1,1,2])
 ic_name_list = ['COPERNICUS/S2_SR']
 
     
 with gen_random_columns[0]:
     numRandomPts = st.number_input('Num pts', 1, 5000, value = 100, key = 'numRandomPts')
-
 with gen_random_columns[1]:
+    eeRandomPtsSeed = st.number_input('Earth Engine seed', 0, 5000, value = 10, key = 'eeRandomPtsSeed')
+
+with gen_random_columns[2]:
     ic_name = st.selectbox(label = 'GEE Image Collection', options = ic_name_list)
     
-with gen_random_columns[2]:
+with gen_random_columns[3]:
     if not st.session_state['status']['region_status']:
         st.markdown("#### ")
         st.markdown(" ")
@@ -133,11 +134,11 @@ with gen_random_columns[2]:
         st.markdown("### ")
         st.markdown(" ")
         # numRandomPts = st.session_state['numRandomPts']
-        st.button('Generate random locations', on_click = spf.GenerateRandomPts, args = (ic_name, numRandomPts))
+        st.button('Generate random locations', on_click = spf.GenerateRandomPts, args = (ic_name, numRandomPts, eeRandomPtsSeed))
     else:
         st.markdown("#### ")
         st.markdown(" ")
-        random_pts = gpd.read_file(st.session_state['paths']['random_locations_path']).set_crs(4326)
+        random_pts = gpd.read_file(st.session_state['paths']['random_locations_path']).to_crs(4326)
         st.markdown('Locations already generated (' + re.sub(st.session_state.app_path,'',random_locations_path) + ')')
 
 st.markdown("""---
@@ -203,7 +204,7 @@ if st.session_state['status']['sample_status']:
     up_text = re.sub('^([0-9]+)','+\\1',str(st.session_state['y_shift'])) + ' m'
     right_text = re.sub('^([0-9]+)','+\\1',str(st.session_state['x_shift'])) + ' m'
     
-        
+            
     if sample_pt_set.loc_set.iloc[0]:
         pt_set_str = 'YES'
     else:

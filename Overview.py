@@ -59,26 +59,47 @@ if debug: print('imports done')
 # gdrive_path = '/Users/gopal/Google Drive'
 # gdrive_ml_path = os.path.join(gdrive_path, '_Research projects/ML')
 # # sys.path.append(gdrive_ml_path)
-# out_folder = 'region1'
 
-default_app_path = '/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data'
+if 'application_path' not in st.session_state:
+    st.session_state['application_path'] = os.getcwd()
+
+
+if os.path.exists('default_appdata_path.txt'):
+    with open('default_appdata_path.txt', 'r') as file:
+        default_appdata_path = file.read().rstrip()
+
+else:
+    default_appdata_path = '[app-data path]'
     
 
 st.title("Dashboard")
 
 
 if 'app_path' not in st.session_state:
-    st.session_state['app_path'] = default_app_path
+    st.session_state['app_path'] = default_appdata_path
 
 st.markdown('`app_path`')
 st.write(st.session_state['app_path'])
 
 
-project_columns = st.columns([3,1])
+project_columns = st.columns([1,3,1])
+
+def set_default_path():
+    appdata_path = st.session_state['app_path_box']
+    app_data_path_file = os.path.join(st.session_state['application_path'], 'default_appdata_path.txt')
+    
+    with open(app_data_path_file, 'w') as f:
+        f.write(appdata_path)
+    
 
 with project_columns[0]:
+    st.text('')
+    st.text('')
+    st.button('Set as local default path', on_click = set_default_path)
+
+with project_columns[1]:
     st.text_input("Application directory (must be in Google Drive and synced locally)", on_change = opf.UpdateAppPath,
-                  value = default_app_path, key = 'app_path_box')
+                  value = default_appdata_path, key = 'app_path_box')
     
 if 'proj_name' not in st.session_state:
     projects_all_init = os.listdir(st.session_state.app_path)
@@ -87,7 +108,7 @@ if 'proj_name' not in st.session_state:
 
 opf.checkProjStatus()
 
-with project_columns[1]:
+with project_columns[2]:
     projects_all = os.listdir(st.session_state.app_path)
     projects = [f for f in projects_all if not f.startswith('.')] + ['Create new project']
     st.selectbox("Select a project", options = tuple(projects), 
@@ -109,12 +130,12 @@ The `project_path` is determined as `app_path/project_name`. The structure of th
     ```
     project_path
     - project_vars.json
-    - region1_classification/
+    - ProjName_classification/
       - location_classification.csv
-    - region1_download_timeseries/
+    - ProjName_download_timeseries/
       - pt_ts_loc0_s2.csv
       - pt_ts_loc0_s1.csv
-    - region1_sample_locations/
+    - ProjName_sample_locations/
       - region.shp
       - random_locations.shp
       - sample_locations.shp
@@ -219,7 +240,7 @@ st.markdown(
 # %%
 
 
-os.listdir(default_app_path)[0:4]
+os.listdir(default_appdata_path)[0:4]
 
 # %%
 

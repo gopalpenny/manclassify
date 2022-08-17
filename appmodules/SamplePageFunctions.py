@@ -45,7 +45,7 @@ def ImportShapefile(sample_locations_dir_path, path_to_shp_import):
     opf.checkProjStatus()
         
 
-def GenerateRandomPts(ic_name, numRandomPts):    
+def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed):    
     # %% GENERATE THE SAMPLES IF random_locations.shp DOES NOT EXIST
     if os.path.exists(st.session_state['paths']['random_locations_path']):
         st.write('random_locations.shp already exists')
@@ -73,7 +73,7 @@ def GenerateRandomPts(ic_name, numRandomPts):
             region = region_fc,
             scale = 10,
             numPixels = numRandomPts,
-            seed = 10,
+            seed = eeRandomPtsSeed,
             geometries = True).map(rs.set_feature_id_func('loc_id')).select('loc_id')
         
         # Export the sample
@@ -86,7 +86,7 @@ def GenerateRandomPts(ic_name, numRandomPts):
         
         task.start()
         
-        st.write("Sent task to Earth Engine")
+        st.message("Sent task to Earth Engine")
         
 # %%
 
