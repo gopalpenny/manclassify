@@ -86,7 +86,7 @@ def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed):
         
         task.start()
         
-        st.message("Sent task to Earth Engine")
+        st.success("Sent task to Earth Engine to generate random points")
         
 # %%
 

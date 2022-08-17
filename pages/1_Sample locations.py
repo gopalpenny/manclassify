@@ -24,6 +24,7 @@ import folium
 import appmodules.manclass as mf
 import appmodules.SamplePageFunctions as spf
 import appmodules.ClassifyPageFunctions as cpf
+from io import BytesIO
 
 gdrive_path = '/Users/gopal/Google Drive'
 gdrive_ml_path = os.path.join(gdrive_path, '_Research/Research projects/ML')
@@ -49,7 +50,9 @@ if not st.session_state['status']['region_status']:
 else:
     region_shp = gpd.read_file(st.session_state['paths']['region_shp_path'])
     p_map = (p9.ggplot() + mf.MapTheme() +
-             p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black"))
+             p9.geom_map(data = region_shp, mapping = p9.aes(), fill = 'white', color = "black"))# +
+             # p9.coord_equal() +
+             # p9.theme(figure_size = (4,4)))
     
     if st.session_state['status']['random_status']:
         random_pts = gpd.read_file(st.session_state['paths']['random_locations_path'])
@@ -66,6 +69,10 @@ main_columns = st.columns([1,1])
 # with col1:
 #     st.pyplot(p9.ggplot.draw(p_map))
 with main_columns[0]:
+    
+    # buf = BytesIO()
+    # p9.ggplot.draw(p_map).savefig(buf, format="png")
+    # st.image(buf)
     st.pyplot(p9.ggplot.draw(p_map))
     
 
