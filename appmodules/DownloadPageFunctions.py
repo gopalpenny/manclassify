@@ -27,6 +27,7 @@ from geemodules import rs
 from geemodules import eesentinel as ees
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+from pathlib import Path
 
 import importlib
 importlib.reload(rs)
@@ -82,7 +83,7 @@ def DownloadCHIRPSpt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, 
     
     sample_pt = ee.Geometry.Point(sample_pt_coords)
     
-    timeseries_dir_name = re.sub('.*/(.*)', '\\1', timeseries_dir_path)
+    timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     
     # Export chirps
     chirps_colname = 'pt_ts_loc_chirps'
@@ -133,7 +134,7 @@ def DownloadS1pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, info
     
     sample_pt = ee.Geometry.Point(sample_pt_coords)
     
-    timeseries_dir_name = re.sub('.*/(.*)', '\\1', timeseries_dir_path)
+    timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     
     # Export S1
     s1_colname = 'pt_ts_loc_s1'
@@ -183,7 +184,7 @@ def DownloadS2pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, info
     
     sample_pt = ee.Geometry.Point(sample_pt_coords)
     
-    timeseries_dir_name = re.sub('.*/(.*)', '\\1', timeseries_dir_path)
+    timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     s2_colname = 'pt_ts_loc_s2'
     s2_pt_filename = re.sub('loc_', 'loc' + str(loc_id) +'_', s2_colname) #sample_pt_name + '_s2'
     s2_pt_filepath = os.path.join(timeseries_dir_path, s2_pt_filename + '.csv')
@@ -250,7 +251,7 @@ def DownloadOLI8pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, in
     
     sample_pt = ee.Geometry.Point(sample_pt_coords)
     
-    timeseries_dir_name = re.sub('.*/(.*)', '\\1', timeseries_dir_path)
+    timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     oli8_colname = 'pt_ts_loc_oli8'
     oli8_pt_filename = re.sub('loc_', 'loc' + str(loc_id) +'_', oli8_colname) #sample_pt_name + '_oli8'
     oli8_pt_filepath = os.path.join(timeseries_dir_path, oli8_pt_filename + '.csv')
@@ -352,7 +353,7 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, 
 
 
 def TimeseriesStatusInit(proj_path):
-    proj_name = re.sub('.*/(.*)', '\\1', proj_path)
+    proj_name = st.session_state['proj_name']
     timeseries_dir_path = os.path.join(proj_path, proj_name + '_download_timeseries')
 
     # Create timeseries directory if it doesn't exist
