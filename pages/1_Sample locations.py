@@ -160,7 +160,10 @@ elif not st.session_state['status']['sample_status']:
 else:
     st.markdown('Already done (' + re.sub(st.session_state.app_path,'',sample_locations_path) + ')')
     if ('sample_pts' not in st.session_state):
-        st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)    
+        st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)   
+        st.session_state['sample_pts']['loc_set'] = st.session_state['sample_pts']['loc_set'] == '1' 
+        # st.session_state['sample_pts'] = sample_pts_read
+        
         st.markdown("""
 With sample_locations.shp initialized, adjust the points using the sidebar and set each piont with the `SET` button.
         """)
@@ -188,6 +191,9 @@ if st.session_state['status']['sample_status']:
         
 
     sample_pts = st.session_state['sample_pts']
+    
+    # st.write('st.session_state[sample_pts]')
+    # st.write(st.session_state['sample_pts']['loc_set'])
     loc_pt_orig = random_pts[random_pts.loc_id == loc_id]
     sample_pt_set = sample_pts[sample_pts.loc_id == loc_id]
     sample_pt_set_latlon = [sample_pt_set.geometry.y, sample_pt_set.geometry.x]
