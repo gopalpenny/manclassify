@@ -167,7 +167,7 @@ elif not st.session_state['status']['sample_status']:
 else:
     st.markdown('`Already done (' + sample_locations_path + '`')
     if ('sample_pts' not in st.session_state):
-        st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)   
+        st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).to_crs(4326)   
         st.session_state['sample_pts']['loc_set'] = st.session_state['sample_pts']['loc_set'].astype('int64') == 1
         # st.session_state['sample_pts'] = sample_pts_read
         
