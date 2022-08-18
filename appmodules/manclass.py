@@ -44,7 +44,7 @@ def GenS1data(loc_id, date_range):
     
     s1['backscatter'] = (s1['VV']**2 + s1['VH']**2) ** (1/2)
     
-    s1['datestr'] = [re.sub('.*?_1SDV_([0-9T]+)_.*','\\1',x) for x in s1['image_id']]
+    s1['datestr'] = [re.sub('.*?_1S.V_([0-9T]+)_.*','\\1',x) for x in s1['image_id']]
     
     s1['datetime'] = pd.to_datetime(s1['datestr'])
     
