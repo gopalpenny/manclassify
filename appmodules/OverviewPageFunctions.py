@@ -86,9 +86,9 @@ def readProjectVars():
     if os.path.exists(vars_path):
         vars_dict = json.load(open(vars_path))
     else:
-        init_year_default = 1900
-        init_year_end_default = 1901
-        init_month_default = 'January'
+        init_year_default = 2014
+        init_year_end_default = 2023
+        init_month_default = 'June'
         init_day_default = 1
         vars_dict = {'classification_year_default' : init_year_default,
                      'classification_start_month' : init_month_default,
