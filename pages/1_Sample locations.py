@@ -25,6 +25,7 @@ import appmodules.manclass as mf
 import appmodules.SamplePageFunctions as spf
 import appmodules.ClassifyPageFunctions as cpf
 from io import BytesIO
+from pathlib import Path
 
 gdrive_path = '/Users/gopal/Google Drive'
 gdrive_ml_path = os.path.join(gdrive_path, '_Research/Research projects/ML')
@@ -108,7 +109,7 @@ path_to_shp_import = st.text_input('Path to shapefile',
 
 if st.session_state['status']['region_status']: 
     app_path = st.session_state['app_path']
-    st.markdown('`Already imported (' + region_shp_path + '`')
+    st.markdown('`Already imported (' + os.path.join(*Path(region_shp_path).parts[-3:]) + ')`')
 else:
     st.button('Import', on_click = spf.ImportShapefile, args = (sample_locations_dir_path, path_to_shp_import,))
         
@@ -120,19 +121,23 @@ Clicking the button `Generate random locations` uploads region.shp to Google Ear
 `N` random samples using the image collection specified.
             """)
 
-gen_random_columns = st.columns([1,1,1,2])
+gen_random_columns = st.columns([2,3,3,3,4])
 ic_name_list = ['COPERNICUS/S2_SR']
 
     
 with gen_random_columns[0]:
-    numRandomPts = st.number_input('Num pts', 1, 5000, value = 10, key = 'numRandomPts')
+    st.markdown("#### ")
+    st.text("")
+    addcropmask = st.checkbox('GFSAD mask?', value = False, key = 'gfsadCropMask')
 with gen_random_columns[1]:
+    numRandomPts = st.number_input('Num pts', 1, 5000, value = 10, key = 'numRandomPts')
+with gen_random_columns[2]:
     eeRandomPtsSeed = st.number_input('Earth Engine seed', 0, 5000, value = 10, key = 'eeRandomPtsSeed')
 
-with gen_random_columns[2]:
+with gen_random_columns[3]:
     ic_name = st.selectbox(label = 'GEE Image Collection', options = ic_name_list)
     
-with gen_random_columns[3]:
+with gen_random_columns[4]:
     if not st.session_state['status']['region_status']:
         st.markdown("#### ")
         st.markdown(" ")
@@ -141,12 +146,12 @@ with gen_random_columns[3]:
         st.markdown("### ")
         st.markdown(" ")
         # numRandomPts = st.session_state['numRandomPts']
-        st.button('Generate random locations', on_click = spf.GenerateRandomPts, args = (ic_name, numRandomPts, eeRandomPtsSeed))
+        st.button('Generate random locations', on_click = spf.GenerateRandomPts, args = (ic_name, numRandomPts, eeRandomPtsSeed, addcropmask))
     else:
         st.markdown("#### ")
         st.markdown(" ")
         random_pts = gpd.read_file(st.session_state['paths']['random_locations_path']).to_crs(4326)
-        st.markdown('`Locations already generated (' + random_locations_path + '`')
+        st.markdown('`Locations already generated (' + os.path.join(*Path(random_locations_path).parts[-3:]) + ')`')
 
 st.markdown("""---
 ### 3. Initialize sample locations
@@ -165,7 +170,7 @@ if not st.session_state['status']['random_status']:
 elif not st.session_state['status']['sample_status']: 
     st.button('Initialize sample locations', on_click = spf.InitializeSampleLocations)
 else:
-    st.markdown('`Already done (' + sample_locations_path + '`')
+    st.markdown('`Already done (' + os.path.join(*Path(sample_locations_path).parts[-3:]) + ')`')
     if ('sample_pts' not in st.session_state):
         st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).to_crs(4326)   
         st.session_state['sample_pts']['loc_set'] = st.session_state['sample_pts']['loc_set'].astype('int64') == 1

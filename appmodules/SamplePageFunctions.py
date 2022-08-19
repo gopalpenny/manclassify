@@ -45,7 +45,7 @@ def ImportShapefile(sample_locations_dir_path, path_to_shp_import):
     opf.checkProjStatus()
         
 
-def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed):    
+def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed, addcropmask):    
     # %% GENERATE THE SAMPLES IF random_locations.shp DOES NOT EXIST
     if os.path.exists(st.session_state['paths']['random_locations_path']):
         st.warning('random_locations.shp already exists')
@@ -67,6 +67,10 @@ def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed):
         # Get Image Collection for random locations
         ic = ee.ImageCollection(ic_name)
         im = ic.mosaic()
+        
+        if addcropmask: # GFSAD == 2 represents cropland
+            gfsad = ee.Image('users/gopalpenny/GFSAD30')
+            im = im.updateMask(gfsad.eq(2))
             
         # Generate the random sample 
         samp_fc = im.sample(
