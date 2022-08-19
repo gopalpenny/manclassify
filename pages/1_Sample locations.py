@@ -117,7 +117,7 @@ st.markdown("""---
 ### 2. Generate random locations
 
 Clicking the button `Generate random locations` uploads region.shp to Google Earth Engine and generates
-`N = 1000` random samples using the image collection specified.
+`N` random samples using the image collection specified.
             """)
 
 gen_random_columns = st.columns([1,1,1,2])
@@ -125,7 +125,7 @@ ic_name_list = ['COPERNICUS/S2_SR']
 
     
 with gen_random_columns[0]:
-    numRandomPts = st.number_input('Num pts', 1, 5000, value = 100, key = 'numRandomPts')
+    numRandomPts = st.number_input('Num pts', 1, 5000, value = 10, key = 'numRandomPts')
 with gen_random_columns[1]:
     eeRandomPtsSeed = st.number_input('Earth Engine seed', 0, 5000, value = 10, key = 'eeRandomPtsSeed')
 
