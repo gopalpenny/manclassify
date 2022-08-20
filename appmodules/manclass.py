@@ -199,6 +199,7 @@ def plotTimeseries(loc_id, date_range, month_seq, snapshot_dates, spectra_list):
         p9.scale_fill_discrete(guide = False) +
         p9.facet_wrap('variable', scales = 'free_y',ncol = 1) +
         # p9.xlim()+
+        p9.guides(linetype = False) +
         # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
         p9.scale_linetype_manual(values = ['solid','dashed']) +
         p9.scale_x_datetime(limits = [pre_date, post_date], breaks = month_seq, labels = month_seq_labels) + # date_labels = '%Y-%b', date_breaks = '1 year') +
@@ -231,6 +232,11 @@ def plotSpectra(loc_id, date_range, spectra_list):
         'variable' : ['B2','B3','B4','B8','backscatter','NDVI'],
         'freq_nm': [495, 560, 660, 835, -1, -1]
         })
+    
+    vert_scales = pd.DataFrame({
+        'variable': ['NDVI']*3 + ['backscatter']*3 + ['precipitation']*3,
+        'value': [0, 0.5, 1] + [0, 20, 40] + [0, 50, 100],
+        'line': ['a', 'b', 'b']*3})
     
     sent_range_all = pd.DataFrame(columns = list(sentinel.columns) + ['rangenum'])
     for i in range(len(spectra_list)):
