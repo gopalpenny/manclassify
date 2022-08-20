@@ -158,6 +158,11 @@ def plotTimeseries(loc_id, date_range, month_seq, snapshot_dates, spectra_list):
     alltimeseries_cloudfree = alltimeseries.query('cloudmask != 1')
     alltimeseries_cloudfree['date'] = [datetime.strftime(x, '%Y-%m-%d') for x in alltimeseries_cloudfree['datetime']]
     
+    vert_scales = pd.DataFrame({
+        'variable': ['NDVI']*3 + ['backscatter']*3 + ['precipitation']*3,
+        'value': [0, 0.5, 1] + [0, 20, 40] + [0, 50, 100],
+        'line': ['a', 'b', 'b']*3})
+    
     # snapshots
     snapshot_datetimes = pd.DataFrame({
         'date' : snapshot_dates,
@@ -184,6 +189,7 @@ def plotTimeseries(loc_id, date_range, month_seq, snapshot_dates, spectra_list):
         p9.geom_segment(data = spectral_range, mapping = p9.aes(x = 'start_date', xend = 'end_date', y = 'yval', yend = 'yval',color = 'id'), size = 2) +
         p9.geom_vline(data = month_seq_df, mapping = p9.aes(xintercept = 'datetime'), color = 'black', alpha = 0.5) +
         p9.annotate('vline', xintercept = year_begin_datetime, color = 'gray', linetype = 'dashed', alpha = 0.5) +
+        p9.geom_abline(data = vert_scales, mapping = p9.aes(intercept = 'value', slope = 0, linetype = 'line'), color = 'red', alpha = 0.35) +
         p9.geom_point(mapping = p9.aes(shape = 'source')) + 
         p9.geom_line(data = alltimeseries_cloudfree[alltimeseries_cloudfree.variable.isin(line_vars)], mapping = p9.aes(group = 'source')) + 
         p9.geom_smooth(data = alltimeseries_cloudfree[alltimeseries_cloudfree.variable.isin(smooth_vars_25)], span = 0.1) + 
@@ -194,8 +200,9 @@ def plotTimeseries(loc_id, date_range, month_seq, snapshot_dates, spectra_list):
         p9.facet_wrap('variable', scales = 'free_y',ncol = 1) +
         # p9.xlim()+
         # p9.scale_x_datetime(limits = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], 
+        p9.scale_linetype_manual(values = ['solid','dashed']) +
         p9.scale_x_datetime(limits = [pre_date, post_date], breaks = month_seq, labels = month_seq_labels) + # date_labels = '%Y-%b', date_breaks = '1 year') +
-        # PlotTheme() + 
+        p9.expand_limits(y = 0) +# PlotTheme() + 
         # p9.theme(legend_position = (0.3,0.3))
         PlotTheme() + 
         p9.theme(
