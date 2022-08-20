@@ -234,9 +234,8 @@ def plotSpectra(loc_id, date_range, spectra_list):
         })
     
     vert_scales = pd.DataFrame({
-        'variable': ['NDVI']*3 + ['backscatter']*3 + ['precipitation']*3,
-        'value': [0, 0.5, 1] + [0, 20, 40] + [0, 50, 100],
-        'line': ['a', 'b', 'b']*3})
+        'value': [0, 0.25, 0.5],
+        'line': ['a', 'b', 'b']})
     
     sent_range_all = pd.DataFrame(columns = list(sentinel.columns) + ['rangenum'])
     for i in range(len(spectra_list)):
@@ -256,14 +255,16 @@ def plotSpectra(loc_id, date_range, spectra_list):
     strlit_color = '#0F1116'
     p_spectra = (
         p9.ggplot(data = sent_range[sent_range['freq_nm'] > 0], mapping = p9.aes(x = 'freq_nm', y = 'Reflectance', color = 'rangenum')) +
+        p9.geom_abline(data = vert_scales, mapping = p9.aes(intercept = 'value', slope = 0, linetype = 'line'), color = 'red', alpha=0.75) +
+        p9.scale_linetype_manual(values = ['solid', 'dashed'], guide = False) + 
         p9.geom_line(size = 2) + p9.geom_point(size = 5) + 
         p9.xlab('Frequency, nm') +
-        p9.expand_limits(y = (0, 0.2)) +
+        p9.expand_limits(y = (0, 0.3)) +
         p9.scale_color_manual(['#572851','#FAE855']) +
         PlotTheme() +
         p9.theme(legend_position = 'none',
                  panel_background = p9.element_rect(fill = strlit_color, color = 'lightgray'),
-                  panel_grid_major = p9.element_line(color = 'lightgray', size = 0.5),
+                  panel_grid_major = p9.element_line(color = 'lightgray', size = 0.5, alpha = 0.2),
                  figure_size = (4.5,2)))
     
     return p_spectra
