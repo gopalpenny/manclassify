@@ -78,7 +78,7 @@ def GenerateRandomPts(ic_name, numRandomPts, eeRandomPtsSeed, addcropmask):
             scale = 10,
             numPixels = numRandomPts,
             seed = eeRandomPtsSeed,
-            geometries = True).map(rs.set_feature_id_func('loc_id')).select('loc_id')
+            geometries = True).map(rs.set_feature_id_func('ee_pt_id')).select('ee_pt_id')
         
         # Export the sample
         task = ee.batch.Export.table.toDrive(
@@ -117,6 +117,9 @@ def InitializeSampleLocations():
         random_pts = gpd.read_file(random_pts_path)
         
         sample_pts_prep = random_pts
+        
+        sample_pts_prep['loc_id'] = np.arange(sample_pts_prep.shape[0])
+        
         sample_pts_prep['orig_lon'] = random_pts.geometry.x
         sample_pts_prep['orig_lat'] = random_pts.geometry.y
         
