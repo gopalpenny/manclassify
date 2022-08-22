@@ -87,7 +87,7 @@ def readProjectVars():
         vars_dict = json.load(open(vars_path))
     else:
         init_year_default = 2014
-        init_year_end_default = 2023
+        init_year_end_default = 2022
         init_month_default = 'June'
         init_day_default = 1
         vars_dict = {'classification_year_default' : init_year_default,
