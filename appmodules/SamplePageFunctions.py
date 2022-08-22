@@ -115,11 +115,11 @@ def InitializeSampleLocations():
         #     os.mkdir(samples_dir_path)
         
         random_pts = gpd.read_file(random_pts_path)
+        random_pts['loc_id'] = np.arange(random_pts.shape[0])
+        random_pts.to_file(random_pts_path)
         
         sample_pts_prep = random_pts
-        
-        sample_pts_prep['loc_id'] = np.arange(sample_pts_prep.shape[0])
-        
+                
         sample_pts_prep['orig_lon'] = random_pts.geometry.x
         sample_pts_prep['orig_lat'] = random_pts.geometry.y
         

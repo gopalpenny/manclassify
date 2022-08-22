@@ -55,10 +55,19 @@ else:
              # p9.coord_equal() +
              # p9.theme(figure_size = (4,4)))
     
-    if st.session_state['status']['random_status']:
-        random_pts = gpd.read_file(st.session_state['paths']['random_locations_path'])
+    if st.session_state['status']['sample_status']:
+        sample_pts_shp = gpd.read_file(st.session_state['paths']['sample_locations_path'])
         p_map = (p_map + 
-                 p9.geom_map(data = random_pts, mapping = p9.aes(color = 'loc_id')))
+                 p9.geom_map(data = sample_pts_shp, mapping = p9.aes(color = 'loc_set', fill = 'loc_set')) +
+                 p9.theme(legend_position=(0.8,0.8)))
+        
+    elif st.session_state['status']['random_status']:
+        random_pts = gpd.read_file(st.session_state['paths']['random_locations_path'])
+        if 'ee_pt_id' not in random_pts: ## for backward compatibility
+            random_pts['ee_pt_id'] = random_pts['loc_id']
+            random_pts.to_file(st.session_state['paths']['random_locations_path'])
+        p_map = (p_map + 
+                 p9.geom_map(data = random_pts, mapping = p9.aes(color = 'ee_pt_id')))
 
 
 # %% Layout
