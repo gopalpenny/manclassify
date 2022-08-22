@@ -54,7 +54,7 @@ def InitializeClassDF():
     elif st.session_state['status']['random_status']:
         loc = gpd.read_file(random_path).to_crs(4326)
         # print(pd.DataFrame(loc['loc_id']))
-        class_df = pd.DataFrame(loc['loc_id']) #.drop(['geometry'], axis = 1)
+        class_df = pd.DataFrame({'loc_id':np.arange(loc.shape[0])}) #.drop(['geometry'], axis = 1)
         class_df['Class'] = np.nan
         
         for i in range(len(subclass_years)):
