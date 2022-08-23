@@ -87,7 +87,7 @@ with main_columns[0]:
     
 
 if not 'default_zoom_sample' in st.session_state:
-    st.session_state['default_zoom_sample'] = 18
+    st.session_state['default_zoom_sample'] = 17
 
 # loc_pt_orig = allpts[allpts.loc_id == loc_id]
 

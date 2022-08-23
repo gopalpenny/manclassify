@@ -296,7 +296,7 @@ with st.sidebar:
 
 
 if not 'default_zoom_classify' in st.session_state:
-    st.session_state['default_zoom_classify'] = 18
+    st.session_state['default_zoom_classify'] = 17
 
 # m_folium = folium.Map()
 m_folium = folium.Map(location = loc_pt_latlon, zoom_start = st.session_state['default_zoom_classify'])
