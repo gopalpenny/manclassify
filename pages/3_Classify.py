@@ -294,8 +294,12 @@ with st.sidebar:
 #     attribution="Google",
 # )
 
+
+if not 'default_zoom_classify' in st.session_state:
+    st.session_state['default_zoom_classify'] = 18
+
 # m_folium = folium.Map()
-m_folium = folium.Map(location = loc_pt_latlon, zoom_start = 18)
+m_folium = folium.Map(location = loc_pt_latlon, zoom_start = st.session_state['default_zoom_classify'])
 tile = folium.TileLayer(
         tiles = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attr = 'Esri',
@@ -334,7 +338,8 @@ start_date = date_range[0]
     
 with col2:
     # st.write(m.to_streamlit())
-    st_folium(m_folium, height = 400, width = 600)
+    st_folium(m_folium, height = 300, width = 600)
+    default_zoom_classify = st.number_input('Default zoom', min_value= 10, max_value= 20, value = 18, key = 'default_zoom_classify')
 
 # %%
 

@@ -86,6 +86,9 @@ with main_columns[0]:
     st.pyplot(p9.ggplot.draw(p_map))
     
 
+if not 'default_zoom_sample' in st.session_state:
+    st.session_state['default_zoom_sample'] = 18
+
 # loc_pt_orig = allpts[allpts.loc_id == loc_id]
 
 
@@ -180,14 +183,18 @@ elif not st.session_state['status']['sample_status']:
     st.button('Initialize sample locations', on_click = spf.InitializeSampleLocations)
 else:
     st.markdown('`Already done (' + os.path.join(*Path(sample_locations_path).parts[-3:]) + ')`')
-    if ('sample_pts' not in st.session_state):
-        st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).to_crs(4326)   
-        st.session_state['sample_pts']['loc_set'] = st.session_state['sample_pts']['loc_set'].astype('int64') == 1
-        # st.session_state['sample_pts'] = sample_pts_read
-        
-        st.markdown("""
+    #if ('sample_pts' not in st.session_state):
+    st.session_state['sample_pts'] = gpd.read_file(st.session_state['paths']['sample_locations_path']).to_crs(4326)   
+    print(st.session_state['sample_pts'])
+    st.session_state['sample_pts']['loc_set'] = st.session_state['sample_pts']['loc_set'].astype('int64') == 1
+    print(st.session_state['sample_pts'])
+    # st.session_state['sample_pts'] = sample_pts_read
+    
+    st.markdown("""
 With sample_locations.shp initialized, adjust the points using the sidebar and set each piont with the `SET` button.
-        """)
+    """)
+    
+    # print(st.session_state['sample_pts'])
 
 
 # %% 
@@ -231,7 +238,8 @@ if st.session_state['status']['sample_status']:
     up_text = re.sub('^([0-9]+)','+\\1',str(st.session_state['y_shift'])) + ' m'
     right_text = re.sub('^([0-9]+)','+\\1',str(st.session_state['x_shift'])) + ' m'
     
-    st.write(sample_pt_set.loc_set)
+    st.write(sample_pts)
+    st.write(sample_pt_set)
     if sample_pt_set.loc_set.iloc[0]:
         pt_set_str = 'YES'
     else:
@@ -305,7 +313,7 @@ if st.session_state['status']['sample_status']:
     loc_pt_latlon_adj = [loc_pt_latlon_shifted.geometry.y, loc_pt_latlon_shifted.geometry.x]
     
     # m_folium = folium.Map()
-    m_folium = folium.Map(location = loc_pt_latlon, zoom_start = 18)
+    m_folium = folium.Map(location = loc_pt_latlon, zoom_start = st.session_state['default_zoom_sample'])
     tile = folium.TileLayer(
             tiles = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             attr = 'Esri',
@@ -322,6 +330,7 @@ if st.session_state['status']['sample_status']:
         
     with main_columns[1]:
         st_folium(m_folium, height = 400, width = 600)
+        default_zoom_sample = st.number_input('Default zoom', min_value= 10, max_value= 20, value = 18, key = 'default_zoom_sample')
         
 
 # sample_pts_raw = gpd.read_file(st.session_state['paths']['sample_locations_path']).set_crs(4326)   
