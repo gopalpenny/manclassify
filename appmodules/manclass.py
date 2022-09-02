@@ -64,7 +64,7 @@ def GenS2data(loc_id, date_range):
     
     s2['datetime'] = pd.to_datetime(s2['datestr'])
     s2 = s2.assign(NDVI = lambda df: (df.B8 - df.B4)/(df.B8 + df.B4))
-    s2 = s2.assign(NDWI = lambda df: (df.B8 - df.B4)/(df.B8 + df.B4))
+    # s2 = s2.assign(NDWI = lambda df: (df.B8 - df.B4)/(df.B8 + df.B4))
     
     
     s2_long = s2.melt(id_vars = ['datetime','cloudmask'], value_vars = ['B8','B4','B3','B2','NDVI'])
