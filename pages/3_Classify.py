@@ -24,6 +24,7 @@ import math
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from collections import OrderedDict
+import appmodules.SamplePageFunctions as spf
 
 
 import importlib
@@ -307,6 +308,21 @@ tile = folium.TileLayer(
         overlay = False,
         control = True
         ).add_to(m_folium)
+
+# get pixel polygonsloc_id, ic_name, coords_xy, ic_str, band_name,
+loc_pt_xy = [float(loc_pt_latlon[1]), float(loc_pt_latlon[0])]
+landsat_px_poly = spf.get_pixel_poly(loc_id,'oli8', loc_pt_xy, 'LANDSAT/LC08/C02/T1_L2', 'SR_B5', buffer_m = 60, vector_type = 'gpd')
+s2_px_poly = spf.get_pixel_poly(loc_id,'s2',loc_pt_xy, 'COPERNICUS/S2', 'B4', buffer_m = 60, vector_type = 'gpd')
+def style(feature):
+    return {
+        'fill': False,
+        'color': 'white',
+        'weight': 1
+    }
+folium.GeoJson(data = landsat_px_poly['geometry'], 
+                style_function = style).add_to(m_folium)
+folium.GeoJson(data = s2_px_poly['geometry'], 
+                style_function = style).add_to(m_folium)
 
 
 m_folium \

@@ -44,7 +44,9 @@ def checkProjStatus():
     proj_name = st.session_state['proj_name']
     paths['proj_path'] = os.path.join(app_path, proj_name)
     paths['samples_dir_name'] = proj_name + "_sample_locations"
+    paths['px_poly_dir_name'] = proj_name + "_px_poly"
     paths['sample_locations_dir_path'] = os.path.join(paths['proj_path'], paths['samples_dir_name'])
+    paths['px_poly_dir_path'] = os.path.join(paths['sample_locations_dir_path'], paths['px_poly_dir_name'])
     paths['random_locations_path'] = os.path.join(paths['sample_locations_dir_path'], "random_locations.shp")
     paths['sample_locations_path'] = os.path.join(paths['sample_locations_dir_path'], "sample_locations.shp")
     paths['region_shp_path'] = os.path.join(paths['sample_locations_dir_path'],"region.shp")
