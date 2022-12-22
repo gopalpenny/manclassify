@@ -67,21 +67,21 @@ def DownloadPoints(loc, date_range, timeseries_dir_path, ts_status):
         # print(i)
         # i = 1
         pt_gpd = loc.iloc[i]
-        sample_pt_coords = [pt_gpd.geometry.x, pt_gpd.geometry.y]
+        sample_pt_xy = [pt_gpd.geometry.x, pt_gpd.geometry.y]
         
         loc_id = loc.loc_id.iloc[i]
-        DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox)
+        DownloadSamplePt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox)
         pbar.progress((float(i) + 1) / loc.shape[0])
         
         
     st.success("All sample locations are now being processed by Google Earth Engine")
 
 
-def DownloadCHIRPSpt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox):
+def DownloadCHIRPSpt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox):
     
     sample_pt_name = 'pt_ts_loc' + str(loc_id)
     
-    sample_pt = ee.Geometry.Point(sample_pt_coords)
+    sample_pt = ee.Geometry.Point(sample_pt_xy)
     
     timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     
@@ -128,11 +128,11 @@ def DownloadCHIRPSpt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, 
         infobox.info('Generating ' + chirps_pt_filename + '.csv')
         # st.write('Generating ' + chirps_pt_filename + '.csv')
         
-def DownloadS1pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox):
+def DownloadS1pt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox):
     
     sample_pt_name = 'pt_ts_loc' + str(loc_id)
     
-    sample_pt = ee.Geometry.Point(sample_pt_coords)
+    sample_pt = ee.Geometry.Point(sample_pt_xy)
     
     timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     
@@ -178,11 +178,11 @@ def DownloadS1pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, info
         infobox.info('Generating ' + s1_pt_filename + '.csv')
         # st.write('Generating ' + s1_pt_filename + '.csv')
         
-def DownloadS2pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox):
+def DownloadS2pt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox):
     
     sample_pt_name = 'pt_ts_loc' + str(loc_id)
     
-    sample_pt = ee.Geometry.Point(sample_pt_coords)
+    sample_pt = ee.Geometry.Point(sample_pt_xy)
     
     timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     s2_colname = 'pt_ts_loc_s2'
@@ -245,11 +245,11 @@ def DownloadS2pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, info
         # print('Generating ' + s2_pt_filename + '.csv')
         infobox.info('Generating ' + s2_pt_filename + '.csv')
         
-def DownloadOLI8pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox):
+def DownloadOLI8pt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox):
     
     sample_pt_name = 'pt_ts_loc' + str(loc_id)
     
-    sample_pt = ee.Geometry.Point(sample_pt_coords)
+    sample_pt = ee.Geometry.Point(sample_pt_xy)
     
     timeseries_dir_name = Path(timeseries_dir_path).parts[-1]
     oli8_colname = 'pt_ts_loc_oli8'
@@ -312,7 +312,7 @@ def DownloadOLI8pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, in
         # print('Generating ' + oli8_pt_filename + '.csv')
         infobox.info('Generating ' + oli8_pt_filename + '.csv')
     
-def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox):
+def DownloadSamplePt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox):
     """
     This function is used to sample imagery using Google Earth Engine
     The point coordinate is used to generate timeseries within the date_range
@@ -321,7 +321,7 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, 
 
     Parameters
     ----------
-    sample_pt_coords : list (float)
+    sample_pt_xy : list (float)
         List of length 2 as [x, y] coordinates.
     loc_id : INT
         loc_id for the point
@@ -337,16 +337,16 @@ def DownloadSamplePt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, 
     """
     
     # Export S1
-    DownloadS1pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox)
+    DownloadS1pt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox)
     
     # Export S2
-    DownloadS2pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox)
+    DownloadS2pt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox)
     
     # Export CHIRPS
-    DownloadCHIRPSpt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox)
+    DownloadCHIRPSpt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox)
     
     # Export OLI8
-    DownloadOLI8pt(sample_pt_coords, loc_id, timeseries_dir_path, date_range, infobox)
+    DownloadOLI8pt(sample_pt_xy, loc_id, timeseries_dir_path, date_range, infobox)
         
         
 #%%
