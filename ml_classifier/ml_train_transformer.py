@@ -27,11 +27,6 @@ proj_path = [path for path in proj_paths if os.path.exists(path)][0]
 s1_all = torch.load(os.path.join(proj_path, 'model_data_s1.pt'))
 s2_all = torch.load(os.path.join(proj_path, 'model_data_s2.pt'))
 classes = torch.load(os.path.join(proj_path, 'model_data_classes.pt'))
-classes
-
-# %%
-s1 = None
-s2 = None
 
 # %%
 def int_to_onehot(y, num_labels):
@@ -138,14 +133,13 @@ optimizer = torch.optim.Adam(xnn.parameters(), lr = 0.001)
 # for train_features, train_labels in train_dl:
 #     i += 1
 #     print(i)
-n_epochs = 100
+n_epochs = 1000
 loss_hist_train = [0] * n_epochs
 accuracy_hist_train = [0] * n_epochs
 loss_hist_valid = [0] * n_epochs
 accuracy_hist_valid = [0] * n_epochs
 for epoch in range(n_epochs):
     xnn.train()
-    print(f"Beginning epoch {epoch+1} / {n_epochs}")
     for _, x_batch, y_batch in train_dl:
         
         # Forward pass
@@ -189,4 +183,4 @@ axs[0].plot(loss_hist_valid)
 axs[0].set(ylabel = "Loss")
 axs[1].plot(accuracy_hist_train)
 axs[1].plot(accuracy_hist_valid)
-axs[1].set(ylabel = "Accuracy")
+axs[1].set(ylabel = "Accuracy", xlabel = "Epoch")
