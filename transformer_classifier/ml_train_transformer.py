@@ -14,6 +14,7 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from ml_classifier.ml_transformer import SentinelDatasets, TransformerClassifier
 
@@ -184,3 +185,13 @@ axs[0].set(ylabel = "Loss")
 axs[1].plot(accuracy_hist_train)
 axs[1].plot(accuracy_hist_valid)
 axs[1].set(ylabel = "Accuracy", xlabel = "Epoch")
+
+# %%
+training_metrics = pd.DataFrame({
+    'loss_hist_train' : loss_hist_train,
+    'loss_hist_valid' : loss_hist_valid,
+    'accuracy_hist_train' : accuracy_hist_train,
+    'accuracy_hist_valid' : accuracy_hist_valid,})
+
+training_metrics.to_csv(os.path.join)
+
