@@ -16,48 +16,48 @@ from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ml_classifier.ml_transformer import SentinelDatasets, TransformerClassifier
+from ml_transformer import SentinelDatasets, TransformerClassifier
 
 # %%
-proj_paths = ["/Users/gopal/Google Drive/_Research/Research projects/ML/manclassify/app_data/Thailand",
-              "/Users/gopalpenny/Library/CloudStorage/GoogleDrive-gopalpenny@gmail.com/My Drive/_Research/Research projects/ML/manclassify/app_data/Thailand"]
 
-proj_path = [path for path in proj_paths if os.path.exists(path)][0]
+data_path = "./data"
+sim_path = "./sim"
+
+if not os.path.exists(sim_path):
+    os.mkdir(sim_path)
 
 
-s1_all = torch.load(os.path.join(proj_path, 'model_data_s1.pt'))
-s2_all = torch.load(os.path.join(proj_path, 'model_data_s2.pt'))
-classes = torch.load(os.path.join(proj_path, 'model_data_classes.pt'))
+s1_all = torch.load(os.path.join(data_path, 'model_data_s1.pt'))
+s2_all = torch.load(os.path.join(data_path, 'model_data_s2.pt'))
+labels = torch.load(os.path.join(data_path, 'model_data_labels.pt'))
 
 # %%
-def int_to_onehot(y, num_labels):
-    ary = np.zeros((y.shape[0], num_labels))
-    for i, val in enumerate(y):
-        ary[i, val] = 1
+# def int_to_onehot(y, num_labels):
+#     ary = np.zeros((y.shape[0], num_labels))
+#     for i, val in enumerate(y):
+#         ary[i, val] = 1
         
-    return ary
-
-
+#     return ary
 
 
 one_hot_encoder = OneHotEncoder(sparse = False)
-one_hot_encoder.fit(classes[:,1:])
-classes_one_hot = torch.concat((classes[:,0:1], 
-                                torch.tensor(one_hot_encoder.transform(classes[:,1:]))), dim = 1)
-classes_one_hot
+one_hot_encoder.fit(labels[:,1:])
+labels_one_hot = torch.concat((labels[:,0:1], 
+                                torch.tensor(one_hot_encoder.transform(labels[:,1:]))), dim = 1)
+labels_one_hot
 
 # %%
-y_train, y_eval = train_test_split(classes_one_hot, train_size = 0.8, stratify = classes[:, 1])
+y_train, y_eval = train_test_split(labels_one_hot, train_size = 0.8, stratify = labels[:, 1])
 y_valid, y_test = train_test_split(y_eval, train_size = 0.5, stratify = y_eval[:, 1])
 
 print('y_train count [single, double, plantation, other]:')
-print([int(torch.sum(y_train[:,x + 1]).item()) for x in np.arange(classes_one_hot.shape[1]-1)])
+print([int(torch.sum(y_train[:,x + 1]).item()) for x in np.arange(labels_one_hot.shape[1]-1)])
 
-print('y_train count [single, double, plantation, other]:')
-print([int(torch.sum(y_valid[:,x + 1]).item()) for x in np.arange(classes_one_hot.shape[1]-1)])
+print('y_valid count [single, double, plantation, other]:')
+print([int(torch.sum(y_valid[:,x + 1]).item()) for x in np.arange(labels_one_hot.shape[1]-1)])
 
-print('y_train count [single, double, plantation, other]:')
-print([int(torch.sum(y_test[:,x + 1]).item()) for x in np.arange(classes_one_hot.shape[1]-1)])
+print('y_test count [single, double, plantation, other]:')
+print([int(torch.sum(y_test[:,x + 1]).item()) for x in np.arange(labels_one_hot.shape[1]-1)])
 
 # %%
 
@@ -82,13 +82,13 @@ data_test = SentinelDatasets(s1_test, s2_test, y_test, 64, 64)
 # Prep weighted sampling for training data
 
 # adapted from https://discuss.pytorch.org/t/how-to-handle-imbalanced-classes/11264/2
-target_classes = torch.stack([torch.argmax(data_train.__getitem__(i)[2]) for i in range(data_train.__len__())])
+target_labels = torch.stack([torch.argmax(data_train.__getitem__(i)[2]) for i in range(data_train.__len__())])
 # count of samples in each class
-class_sample_count = np.array([torch.sum(target_classes == i) for i in torch.unique(target_classes)])
+class_sample_count = np.array([torch.sum(target_labels == i) for i in torch.unique(target_labels)])
 
-# weight for each class (classes must go from 0 to n-1 classes)
+# weight for each class (labels must go from 0 to n-1 labels)
 weight = 1. / class_sample_count
-sample_weights = np.array([weight[i] for i in target_classes])
+sample_weights = np.array([weight[i] for i in target_labels])
 sampler = WeightedRandomSampler(weights = sample_weights, num_samples = len(sample_weights))
 
 
@@ -134,7 +134,7 @@ optimizer = torch.optim.Adam(xnn.parameters(), lr = 0.001)
 # for train_features, train_labels in train_dl:
 #     i += 1
 #     print(i)
-n_epochs = 1000
+n_epochs = 50
 loss_hist_train = [0] * n_epochs
 accuracy_hist_train = [0] * n_epochs
 loss_hist_valid = [0] * n_epochs
@@ -186,6 +186,8 @@ axs[1].plot(accuracy_hist_train)
 axs[1].plot(accuracy_hist_valid)
 axs[1].set(ylabel = "Accuracy", xlabel = "Epoch")
 
+plt.savefig(os.path.join(sim_path, "training_loss.png"))
+
 # %%
 training_metrics = pd.DataFrame({
     'loss_hist_train' : loss_hist_train,
@@ -193,5 +195,5 @@ training_metrics = pd.DataFrame({
     'accuracy_hist_train' : accuracy_hist_train,
     'accuracy_hist_valid' : accuracy_hist_valid,})
 
-training_metrics.to_csv(os.path.join)
+training_metrics.to_csv(os.path.join(sim_path,"training_metrics.csv"))
 
