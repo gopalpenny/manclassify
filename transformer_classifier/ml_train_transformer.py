@@ -42,8 +42,10 @@ labels = torch.load(os.path.join(data_path, 'model_data_labels.pt'))
 
 one_hot_encoder = OneHotEncoder(sparse = False)
 one_hot_encoder.fit(labels[:,1:])
-labels_one_hot = torch.concat((labels[:,0:1], 
+
+labels_one_hot = torch.cat((labels[:,0:1], 
                                 torch.tensor(one_hot_encoder.transform(labels[:,1:]))), dim = 1)
+# torch.all(labels_one_hot == labels_one_hot_prev)
 labels_one_hot
 
 # %%
