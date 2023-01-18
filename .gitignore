@@ -1,3 +1,4 @@
 .spyproject
 .idea/*
 default_appdata_path.txt
+**/__pycache__/
