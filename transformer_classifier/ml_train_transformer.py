@@ -64,13 +64,13 @@ print([int(torch.sum(y_test[:,x + 1]).item()) for x in np.arange(labels_one_hot.
 # %%
 
 # Split training X values
-s1_train = s1_all[torch.isin(s1_all[:, 0], y_train[:,0])]
-s1_valid = s1_all[torch.isin(s1_all[:, 0], y_valid[:,0])]
-s1_test = s1_all[torch.isin(s1_all[:, 0], y_test[:,0])]
+s1_train = s1_all[np.isin(s1_all[:, 0], y_train[:,0])]
+s1_valid = s1_all[np.isin(s1_all[:, 0], y_valid[:,0])]
+s1_test = s1_all[np.isin(s1_all[:, 0], y_test[:,0])]
 
-s2_train = s2_all[torch.isin(s2_all[:, 0], y_train[:,0])]
-s2_valid = s2_all[torch.isin(s2_all[:, 0], y_valid[:,0])]
-s2_test = s2_all[torch.isin(s2_all[:, 0], y_test[:,0])]
+s2_train = s2_all[np.isin(s2_all[:, 0], y_train[:,0])]
+s2_valid = s2_all[np.isin(s2_all[:, 0], y_valid[:,0])]
+s2_test = s2_all[np.isin(s2_all[:, 0], y_test[:,0])]
 
 # %%
 
