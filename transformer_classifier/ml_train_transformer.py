@@ -49,17 +49,17 @@ labels_one_hot = torch.cat((labels[:,0:1],
 labels_one_hot
 
 # %%
-y_train, y_eval = train_test_split(labels_one_hot, train_size = 0.8, stratify = labels[:, 1])
+y_train, y_eval = train_test_split(labels, train_size = 0.8, stratify = labels[:, 1])
 y_valid, y_test = train_test_split(y_eval, train_size = 0.5, stratify = y_eval[:, 1])
 
 print('y_train count [single, double, plantation, other]:')
-print([int(torch.sum(y_train[:,x + 1]).item()) for x in np.arange(labels_one_hot.shape[1]-1)])
+print([int(torch.sum(y_train[:,x + 1]).item()) for x in np.arange(labels.shape[1]-1)])
 
 print('y_valid count [single, double, plantation, other]:')
-print([int(torch.sum(y_valid[:,x + 1]).item()) for x in np.arange(labels_one_hot.shape[1]-1)])
+print([int(torch.sum(y_valid[:,x + 1]).item()) for x in np.arange(labels.shape[1]-1)])
 
 print('y_test count [single, double, plantation, other]:')
-print([int(torch.sum(y_test[:,x + 1]).item()) for x in np.arange(labels_one_hot.shape[1]-1)])
+print([int(torch.sum(y_test[:,x + 1]).item()) for x in np.arange(labels.shape[1]-1)])
 
 # %%
 
@@ -115,7 +115,8 @@ xnn(s2)
 
 def get_num_correct(model_batch_out, y_batch):
     pred = torch.argmax(model_batch_out, dim = 1)
-    actual = torch.argmax(y_batch, dim = 1)
+    actual = y_batch
+    # actual = torch.argmax(y_batch, dim = 1)
     num_correct = torch.sum(pred == actual).item()
     # print('type',type(num_correct))
     # x = num_correct# item()
@@ -129,6 +130,7 @@ def get_num_correct(model_batch_out, y_batch):
 
 # i = 1
 loss_fn = nn.CrossEntropyLoss()
+# loss_fn = nn.NLLLoss()
 optimizer = torch.optim.Adam(xnn.parameters(), lr = 0.001)
 
 
@@ -142,15 +144,27 @@ accuracy_hist_train = [0] * n_epochs
 loss_hist_valid = [0] * n_epochs
 accuracy_hist_valid = [0] * n_epochs
 for epoch in range(n_epochs):
+    counter = 0
     xnn.train()
     for _, x_batch, y_batch in train_dl:
         
         # Forward pass
         pred = xnn(x_batch)
+        
+        y_batch = y_batch.flatten().type(torch.LongTensor)
+        
+        # print first tensor for debugging
+        # if epoch == 0 and counter == 0:
+        #     print(pred)
+        #     print(y_batch)
+        #     counter +=1
+            
         loss = loss_fn(pred, y_batch)
+        
         
         # Accumulate loss and accuracy
         loss_hist_train[epoch] += loss.item() * y_batch.size(0)
+        
         accuracy_hist_train[epoch] += get_num_correct(pred, y_batch)
 
         # Backward and optimize
@@ -166,6 +180,11 @@ for epoch in range(n_epochs):
 
             # Forward pass
             pred = xnn(x_batch)
+            
+            y_batch = y_batch.flatten().type(torch.LongTensor)
+            
+            # print('pred',pred)
+            # print('target',y_batch)
             loss = loss_fn(pred, y_batch)
 
             # Accumulate loss and accuracy
